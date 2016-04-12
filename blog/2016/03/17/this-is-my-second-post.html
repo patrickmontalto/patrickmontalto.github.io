@@ -1,0 +1,73 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>Pitch Perfect 2</title>
+
+    
+    <script src="https://code.jquery.com/jquery-1.12.3.min.js" integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet' type='text/css'>
+    <script src="/javascripts/all.js"></script>
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/highlighting.css" rel="stylesheet" />
+  </head>
+  <body>
+     <nav class="navbar navbar-static-top">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">patrickm.io</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          
+          <ul class="nav navbar-nav navbar-right">
+            <li class="no-hover">
+              <a href="/blog">blog</a>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+<article>
+		<h1 class="article-title">Pitch Perfect 2</h1>
+		<p>I finished the majority of the Pitch Perfect app today on Udacity. The projected finish date was supposed to be April 18th, but it&rsquo;s only March 18th now so it looks like I am nearly a month ahead of schedule!</p>
+
+<p>In the last portion of the project I had to figure out a good portion of stuff. Here is a recap of what I&rsquo;ve covered:</p>
+
+<p>Delegates
+It was interesting to get a good analogy about how delegates work. The boss to employee analogy drew a good parallel. The &ldquo;boss&rdquo; in this situation is AVAudioRecorder. AVAudioRecorder knows: how to record audio, when the recording is done, and has access to the function audioRecorderDidFinishRecording. The &ldquo;employee&rdquo; is RecordSoundsViewController
+Therefore, we need to enable this delegate in our RecordSoundsViewController class. This was accomplished in two steps:
+Add AVAudioRecorderDelegate to the class inheritance
+add audioRecorder.delegate = self
+Now we have access to the function audioRecorderDidFinishRecording.
+Behind the scenes, AVAudioRecorder is a class with a delegate property of type AVAudioReocrderDelegate! (which is just a protocol)
+The protocol AVAudioRecorderDelegate contains the function we want to use.
+Therefore by doing audioRecorder.delegate = self, we allow our ViewController to access the methods in the protocol.
+Save audio using AVAudioRecorder
+Record data / model
+Pass data from one ViewController to another (pass data between segues)
+Almost done with the app, I&rsquo;ll update once I&rsquo;ve finished the entire rubric!</p>
+
+	</article>
+
+
+</div>
+  </body>
+</html>

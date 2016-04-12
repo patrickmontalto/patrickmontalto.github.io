@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Blog Name</title>
+  <subtitle>Blog subtitle</subtitle>
+  <id>http://blog.url.com/blog</id>
+  <link href="http://blog.url.com/blog"/>
+  <link href="http://blog.url.com/feed.xml" rel="self"/>
+  <updated>2016-03-16T20:32:00-04:00</updated>
+  <author>
+    <name>Blog Author</name>
+  </author>
+  <entry>
+    <title>Pitch Perfect 2</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2016/03/17/this-is-my-second-post.html"/>
+    <id>http://blog.url.com/blog/2016/03/17/this-is-my-second-post.html</id>
+    <published>2016-03-16T20:32:00-04:00</published>
+    <updated>2016-04-11T00:28:35-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;I finished the majority of the Pitch Perfect app today on Udacity. The projected finish date was supposed to be April 18th, but it&amp;rsquo;s only March 18th now so it looks like I am nearly a month ahead of schedule!&lt;/p&gt;
+
+&lt;p&gt;In the last portion of the project I had to figure out a good portion of stuff. Here is a recap of what I&amp;rsquo;ve covered:&lt;/p&gt;
+
+&lt;p&gt;Delegates
+It was interesting to get a good analogy about how delegates work. The boss to employee analogy drew a good parallel. The &amp;ldquo;boss&amp;rdquo; in this situation is AVAudioRecorder. AVAudioRecorder knows: how to record audio, when the recording is done, and has access to the function audioRecorderDidFinishRecording. The &amp;ldquo;employee&amp;rdquo; is RecordSoundsViewController
+Therefore, we need to enable this delegate in our RecordSoundsViewController class. This was accomplished in two steps:
+Add AVAudioRecorderDelegate to the class inheritance
+add audioRecorder.delegate = self
+Now we have access to the function audioRecorderDidFinishRecording.
+Behind the scenes, AVAudioRecorder is a class with a delegate property of type AVAudioReocrderDelegate! (which is just a protocol)
+The protocol AVAudioRecorderDelegate contains the function we want to use.
+Therefore by doing audioRecorder.delegate = self, we allow our ViewController to access the methods in the protocol.
+Save audio using AVAudioRecorder
+Record data / model
+Pass data from one ViewController to another (pass data between segues)
+Almost done with the app, I&amp;rsquo;ll update once I&amp;rsquo;ve finished the entire rubric!&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>Pitch Perfect</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2016/03/16/pitch-perfect.html"/>
+    <id>http://blog.url.com/blog/2016/03/16/pitch-perfect.html</id>
+    <published>2016-03-15T23:31:00-04:00</published>
+    <updated>2016-04-11T22:54:33-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;I began Udacity&amp;rsquo;s iOS program yesterday to explore how in-depth it got with certain things that were being left out of Rob Percival&amp;rsquo;s Udemy iOS 9/Swift 2.0 course.&lt;/p&gt;
+
+&lt;p&gt;I am glad to say that I am pleasantly surprised to find there to be a good deal of interaction and good habit-forming techniques promoted. Although I am already quite familiar with Swift through BNR&amp;rsquo;s book and have built about 5-10 small apps through Treehouse and Udemy, it is refreshing to be in such a constructive learning environment like Udacity. &lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s a summary of what I&amp;rsquo;ve done at Udacity my first day:&lt;/p&gt;
+
+&lt;p&gt;Import audio files
+Import images
+Play audio files
+Stop audio files
+change audio playback speed (rate)
+Reset audio playback position (reset to beginning)
+ViewController lifecycle
+This was the biggest thing so far, all of the aforementioned stuff I had already learned from Udemy or Treehouse.
+Some neat shortcuts in Xcode (hiding navigator/utilities, etc)
+All in all it was a good first day.&lt;/p&gt;
+</content>
+  </entry>
+</feed>
