@@ -3245,7 +3245,7 @@ a.subdued {
 
 /* line 143, site.css.scss */
 .active {
-  color: #5BC0BE; }
+  color: #5BC0BE !important; }
 
 /* line 147, site.css.scss */
 .page-indexing {
