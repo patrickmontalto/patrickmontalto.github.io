@@ -3178,60 +3178,89 @@ ul.nav a:hover, .navbar-header a:hover {
   text-align: left; }
 
 /* line 79, site.css.scss */
+.sm {
+  font-size: 22pt; }
+
+/* line 82, site.css.scss */
 .links {
   text-align: center; }
 
-/* line 82, site.css.scss */
+/* line 85, site.css.scss */
 .links a {
   color: gray; }
-  /* line 84, site.css.scss */
+  /* line 87, site.css.scss */
   .links a:hover {
     color: #5BC0BE; }
 
-/* line 87, site.css.scss */
+/* line 90, site.css.scss */
 .read-more {
   font-size: 16px;
   color: #5BC0BE; }
 
-/* line 91, site.css.scss */
+/* line 95, site.css.scss */
 .article-title {
+  font-size: 36pt;
   margin-bottom: 5pt; }
 
-/* line 94, site.css.scss */
+/* line 99, site.css.scss */
 .article-date {
   color: #888; }
 
-/* line 98, site.css.scss */
+/* line 103, site.css.scss */
 .logo .page-title {
   -webkit-animation: fade-in-down 0.6s;
   animation: fade-in-down 0.6s;
   -webkit-animation-delay: 0.0s;
   animation-delay: 0.0s; }
 
-/* line 104, site.css.scss */
-#instafeed > a {
-  margin-right: 15px; }
+/* line 109, site.css.scss */
+#instafeed > a > img {
+  margin: 0 15px 15px 0px; }
 
-/* line 107, site.css.scss */
+/* line 112, site.css.scss */
 .follow-me {
   font-size: 12pt; }
 
-/* line 111, site.css.scss */
+/* line 116, site.css.scss */
 .no-top-margin {
   margin-top: 0; }
 
-/* line 115, site.css.scss */
+/* line 120, site.css.scss */
 a.subdued {
   color: #888; }
-  /* line 117, site.css.scss */
+  /* line 122, site.css.scss */
   a.subdued:hover {
     border-bottom: 1px solid #888; }
 
-/* line 123, site.css.scss */
+/* line 128, site.css.scss */
+.pagination {
+  display: block;
+  margin: 50px 20%;
+  font-size: 12pt;
+  text-align: center; }
+
+/* line 138, site.css.scss */
+.article-nav {
+  display: block; }
+
+/* line 143, site.css.scss */
+.active {
+  color: #5BC0BE; }
+
+/* line 147, site.css.scss */
+.page-indexing {
+  margin: 0 10px 0 10px; }
+
+/* line 150, site.css.scss */
+article {
+  margin-bottom: 50px; }
+
+/* line 153, site.css.scss */
 footer {
+  clear: right;
   margin-top: 50pt; }
 
-/* line 126, site.css.scss */
+/* line 157, site.css.scss */
 footer p, footer p > a {
   font-family: 'futura-pt' -apple-system, Helvetica, Arial, sans-serif;
   font-size: 10pt;
