@@ -1,0 +1,218 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>Pitch Perfect Completed</title>
+
+    
+    <script src="https://code.jquery.com/jquery-1.12.3.min.js" integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet' type='text/css'>
+    <script src="/javascripts/all.js"></script>
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/highlighting.css" rel="stylesheet" />
+  </head>
+  <body>
+     <nav class="navbar navbar-static-top">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">patrickm.io</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          
+          <ul class="nav navbar-nav navbar-right">
+            <li class="no-hover">
+              <a href="/blog">blog</a>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+<article>
+		<h1 class="article-title">Pitch Perfect Completed</h1>
+		<p>I finished the Udacity Pitch Perfect app over the weekend and submitted it for approval on Monday afternoon. I got a response back pretty quickly&hellip;all but a few minor issues had to be resolved.</p>
+
+<p>One issue/recommendation was to use the extract method pattern to extract out the method that stopped the audio and reset the audio engine. This was relatively simple and more so an oversight of my own.</p>
+
+<p>Next I started to move on to a quick review of Swift basics. I wanted to refresh myself with another perspective on Structs, Enumerations, and the like. Before that though, I wanted to really hammer-in the concept of Optionals.
+For example, the following code is not allowed:</p>
+<pre class="highlight swift"><code><span class="k">var</span> <span class="nv">z</span><span class="p">:</span> <span class="kt">Int</span>
+<span class="n">z</span> <span class="o">=</span> <span class="kc">nil</span>
+</code></pre>
+
+<p>This is because Swift disallows nil values in all types, except Optionals. We can make this code allowable by declaring z as an Optional Int:</p>
+<pre class="highlight swift"><code><span class="k">var</span> <span class="nv">z</span><span class="p">:</span> <span class="kt">Int</span><span class="p">?</span>
+<span class="n">z</span> <span class="o">=</span> <span class="kc">nil</span>
+</code></pre>
+
+<p>And now we&rsquo;re good to go. Optional Chaining is great way to safely unwrap optionals, especially when combined with optional binding (if let statements). Here&rsquo;s an example of plain optional binding: </p>
+<pre class="highlight swift"><code><span class="k">if</span> <span class="k">let</span> <span class="nv">image</span> <span class="o">=</span> <span class="n">imageView</span><span class="o">.</span><span class="n">image</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">size</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">size</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"image size: </span><span class="se">\(</span><span class="n">size</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"Image not set."</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>If we used optional chaining with optional binding, we get a more succinct piece of code:</p>
+<pre class="highlight swift"><code><span class="k">if</span> <span class="k">let</span> <span class="nv">imageSize</span> <span class="o">=</span> <span class="n">imageView</span><span class="o">.</span><span class="n">image</span><span class="p">?</span><span class="o">.</span><span class="n">size</span> <span class="p">{</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"image size: </span><span class="se">\(</span><span class="n">imageSize</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
+<span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"Image not set."</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>The bang (!) you see has two different meanings depending on where it is used.</p>
+
+<p>In declarations, it works to declare an implicitly unwrapped optional. This will automatically unwrap the optional for us when we use it, and can throw a fatal error if called upon when nil. We often see this used for IBOutlets, because they are nil until the ViewDidLoad() method is called. However, this lets us use them in our functions without having to ever unwrap them again. In this case, we can deduce that there are two reasons to use an implicitly unwrapped optional:</p>
+
+<p>When the value of the object needs to be nil upon creation
+&amp; When we can guarantee they won&rsquo;t be nil when we need to use them</p>
+
+<p>In expressions, using a ! will result in a force unwrap. A force unwrap is telling the application that you know for certain that the optional is not containing nil. In order to do this, you must be extremely certain that the optional will not contain nil when called upon, otherwise a fatal error will occur.</p>
+
+<p>Here are some examples of when to use the bang (!):</p>
+<pre class="highlight swift"><code><span class="c1">// Example 1</span>
+<span class="k">let</span> <span class="nv">w</span> <span class="o">=</span> <span class="kt">Int</span><span class="p">(</span><span class="s">"123"</span><span class="p">)</span><span class="o">!</span>
+<span class="n">w</span> <span class="o">=</span> <span class="mi">2</span>
+
+<span class="c1">// Example 2</span>
+<span class="kd">class</span> <span class="kt">BetterViewController</span><span class="p">:</span><span class="kt">UIViewController</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">myButton</span><span class="p">:</span> <span class="kt">UIButton</span><span class="o">!</span> 
+<span class="p">}</span>
+</code></pre>
+
+<p>Another way to use the optional operators ? and ! are for downcasting, when you are using the variable as a subclass of what it is currently set as, such as downcasting an NSString to a String.</p>
+
+<p>Next up was functions review, and it was important to note that functions in Objective-C and Swift use prepositions in their function names to refer to the first parameter, such as firstCharacterOf(word: String), and so on.</p>
+
+<p>Swift entity scope was also important to note. Swift uses three access control levels: public, internal, and private. Internal is often used, and it&rsquo;s access level is within Classes and the App/Framework, but it is not Global.</p>
+
+<p>Dealing with scopes, it&rsquo;s also important to know that type/class properties are constants for the entire class. Computed properties use custom getter/setter methods.</p>
+
+<p>Class functions/properties are available to all subclasses, and static functions/properties are only available to the main (parent) class.</p>
+
+<p>Enumerations define a set of related values, and Structs are a convenient way to bundle properties together. Both can have their own methods, and both can conform to protocols. Enums use the case structure:</p>
+<pre class="highlight swift"><code><span class="kd">enum</span> <span class="kt">PrimaryColor</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="n">red</span><span class="p">,</span> <span class="n">blue</span><span class="p">,</span> <span class="n">yellow</span>
+<span class="p">}</span>
+
+<span class="kd">enum</span> <span class="kt">AmericanLeagueWest</span><span class="p">:</span> <span class="kt">String</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="kt">As</span> <span class="o">=</span> <span class="s">"Oakland"</span>
+    <span class="k">case</span> <span class="kt">Astros</span> <span class="o">=</span> <span class="s">"Houston"</span>
+    <span class="k">case</span> <span class="kt">Angels</span> <span class="o">=</span> <span class="s">"Los Angeles"</span>
+    <span class="k">case</span> <span class="kt">Mariners</span> <span class="o">=</span> <span class="s">"Seattle"</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>You can access the enumerations raw value such as AmericanLeagueWest.Astros.rawValue</p>
+
+<p>Structs get memberwise initializers automatically. Classes are references types, but structs and enums are value types (they get copied on every assignment). Also, only classes have inheritance!</p>
+
+<p>Here are some examples of enums, classes, and structs:</p>
+<pre class="highlight swift"><code><span class="kd">struct</span> <span class="kt">Triangle</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">angles</span> <span class="o">=</span> <span class="p">[</span><span class="mi">30</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">90</span><span class="p">]</span>
+    <span class="k">let</span> <span class="nv">sides</span> <span class="o">=</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">]</span>
+<span class="p">}</span>
+
+<span class="kd">enum</span> <span class="kt">Subject</span> <span class="p">{</span>
+    <span class="k">case</span> <span class="kt">Math</span>
+    <span class="k">case</span> <span class="kt">Science</span>
+    <span class="k">case</span> <span class="kt">English</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="kt">Student</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">grades</span> <span class="o">=</span> <span class="p">[</span><span class="kt">Double</span><span class="p">]()</span>
+    <span class="k">let</span> <span class="nv">name</span> <span class="o">=</span> <span class="kt">Name</span><span class="p">(</span><span class="nv">firstName</span><span class="p">:</span> <span class="s">"Grace"</span><span class="p">,</span> <span class="nv">lastName</span><span class="p">:</span> <span class="s">"Hooper"</span><span class="p">)</span>
+    <span class="o">...</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>The last bit of Swift basics touched on Protocols, Extensions, and Closures.</p>
+
+<p>Protocols are shared among classes, and extensions are used to customize exisitng classes.</p>
+
+<p>Protocol is a list of related method signatures. Adopting a protocol is like signing a contract to implement every method on that list. It&rsquo;s an essential component to the delegate pattern.</p>
+<pre class="highlight swift"><code><span class="c1">// Equatable Protocol</span>
+<span class="kd">func</span> <span class="o">==</span><span class="p">(</span><span class="nv">lhs</span><span class="p">:</span><span class="k">Self</span><span class="p">,</span> <span class="nv">rhs</span><span class="p">:</span> <span class="k">Self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+
+<span class="c1">// Implementation:</span>
+<span class="kd">func</span> <span class="o">==</span><span class="p">(</span><span class="nv">lhs</span><span class="p">:</span> <span class="kt">Roommate</span><span class="p">,</span> <span class="nv">rhs</span><span class="p">:</span> <span class="kt">Roommate</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">lhs</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">rhs</span><span class="o">.</span><span class="n">name</span> <span class="o">&amp;&amp;</span> <span class="n">lhs</span><span class="o">.</span><span class="n">hungry</span> <span class="o">==</span> <span class="n">rhs</span><span class="o">.</span><span class="n">hungry</span>
+<span class="p">}</span>
+
+<span class="c1">// Test:</span>
+<span class="k">var</span> <span class="nv">roommate</span> <span class="o">=</span> <span class="kt">Roommate</span><span class="p">(</span><span class="nv">hungry</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span> <span class="nv">name</span><span class="p">:</span> <span class="s">"Alex"</span><span class="p">)</span>
+<span class="k">var</span> <span class="nv">otherRoommate</span> <span class="o">=</span> <span class="kt">Roommate</span><span class="p">(</span><span class="nv">hungry</span><span class="p">:</span> <span class="kc">true</span><span class="p">,</span> <span class="nv">name</span><span class="p">:</span> <span class="s">"Alex"</span><span class="p">)</span>
+
+<span class="n">roommate</span> <span class="o">==</span> <span class="n">otherRoommate</span> <span class="c1">// true</span>
+</code></pre>
+
+<p>A protocol is also a type. You can use protocol names where you would use any other type name. This basically means you specify that &ldquo;I don&rsquo;t care what type of object you pass into the property/function, as long as they adhere to protocol X&rdquo;</p>
+<pre class="highlight swift"><code><span class="kd">class</span> <span class="kt">DinnerCrew</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">members</span><span class="p">:</span> <span class="p">[</span><span class="kt">Souschef</span><span class="p">]</span>
+    <span class="nf">init</span><span class="p">(</span><span class="nv">members</span><span class="p">:</span> <span class="p">[</span><span class="kt">Souschef</span><span class="p">]</span> <span class="p">{</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">members</span> <span class="o">=</span> <span class="n">members</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Extensions can add new functionality to a type, but they cannot override existing functionality. You can use extensions to extend properties, methods, or even protocols. You can even add new initializers to existing types through extensions.</p>
+
+<p>Finally, Closures in Swift include global functions, nested functions, and closure expressions. Closure expressions are unnamed, self-contained blocks of code that can be passed to a function.</p>
+
+<p>Example:</p>
+
+<p>sort() is part of the swift standard library. It is part of the SequenceType protocol. It takes one argument: a closure expression about how items in the collection should be ordered.
+Syntax:</p>
+<pre class="highlight swift"><code><span class="p">{(</span><span class="n">parameter</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">returnType</span> <span class="k">in</span>
+    <span class="n">statements</span> <span class="n">to</span> <span class="n">execute</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Example in use:</p>
+<pre class="highlight swift"><code><span class="k">var</span> <span class="nv">bids</span> <span class="o">=</span> <span class="p">[</span><span class="mi">48</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="mi">63</span><span class="p">,</span> <span class="mi">52</span><span class="p">,</span> <span class="mi">68</span><span class="p">]</span>
+<span class="k">var</span> <span class="nv">orderedBids</span> <span class="o">=</span> <span class="n">bids</span><span class="o">.</span><span class="nf">sort</span><span class="p">({</span> <span class="nv">bid1</span><span class="p">:</span> <span class="kt">Int</span><span class="p">,</span> <span class="nv">bid2</span><span class="p">:</span> <span class="kt">Int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span> <span class="k">in</span>
+    <span class="k">return</span> <span class="n">bid2</span> <span class="o">&gt;</span> <span class="n">bid1</span>
+<span class="p">})</span>
+<span class="nf">print</span><span class="p">(</span><span class="n">orderedBids</span><span class="p">)</span> <span class="err">#</span><span class="o">=&gt;</span> <span class="p">[</span><span class="mi">48</span><span class="p">,</span> <span class="mi">52</span><span class="p">,</span> <span class="mi">63</span><span class="p">,</span> <span class="mi">68</span><span class="p">,</span> <span class="mi">75</span><span class="p">]</span>
+
+<span class="c1">// Briefer syntax:</span>
+
+<span class="k">var</span> <span class="nv">orderedBidsBrief</span> <span class="o">=</span> <span class="n">bids</span><span class="o">.</span><span class="nf">sort</span><span class="p">({</span>
+    <span class="nv">$1</span> <span class="o">&gt;</span> <span class="nv">$0</span>
+<span class="p">})</span>
+</code></pre>
+
+	</article>
+
+	<div class='article-nav'>
+      <div class="pull-right"><a class="active" href="/blog/2016/03/17/this-is-my-second-post.html">Next →</a></div>
+
+	</div>
+
+
+
+		<footer>
+			<p>© 2016 <a href="/" rel="home">Patrick Montalto</a></p>
+		</footer>
+		</div>
+  </body>
+</html>
