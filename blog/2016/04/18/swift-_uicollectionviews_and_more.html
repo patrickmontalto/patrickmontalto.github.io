@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>UICollectionViews & More</title>
+
+    
+    <script src="https://code.jquery.com/jquery-1.12.3.min.js" integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet' type='text/css'>
+    <script src="/javascripts/all.js"></script>
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/highlighting.css" rel="stylesheet" />
+  </head>
+  <body>
+     <nav class="navbar navbar-static-top">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">patrickm.io</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          
+          <ul class="nav navbar-nav navbar-right">
+            <li class="no-hover">
+              <a href="/blog">blog</a>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+<article>
+		<h1 class="article-title">UICollectionViews & More</h1>
+		<p>I&rsquo;ve recently started working with collection views, and it&rsquo;s been a relatively simple process (minus fiddling around with the layout).</p>
+
+<p>I&rsquo;ve been working with table views for a good few months now in my spare time and felt pretty comfortable with the methods of the UITableView DataSource and Delegate protocols. It was a natural transition to start learning the methods of CollectionView delegates and data sources as well.</p>
+
+<p>I applied my learning to a Meme generator app, called MemeMe. The app presents a TableView and a CollectionView which show memes created using the application. The user can select whether they want to see their memes in a table view or a collection view by tapping the appropriate icon on the tab bar.</p>
+
+<p>I implemented a separate NavigationController for the table view and collection view, and connected both via a TabBarController.</p>
+
+<p>Tapping on a meme in the table view opens up a custom view controller, MemeDetailViewController. Within the 
+<code>tableView(_:didSelectRowAtIndexPath:)</code> method, the navigation controller pushes the detail view ontop of the navigation stack and passes the specific meme to the detail view.</p>
+<pre class="highlight swift"><code><span class="kd">func</span> <span class="nf">tableView</span><span class="p">(</span><span class="nv">tableView</span><span class="p">:</span> <span class="kt">UITableView</span><span class="p">,</span> <span class="n">didSelectRowAtIndexPath</span> <span class="nv">indexPath</span><span class="p">:</span> <span class="kt">NSIndexPath</span><span class="p">)</span> <span class="p">{</span>
+  <span class="c1">// present meme detail view controller </span>
+  <span class="k">let</span> <span class="nv">detailController</span> <span class="o">=</span> <span class="n">storyboard</span><span class="o">!.</span><span class="nf">instantiateViewControllerWithIdentifier</span><span class="p">(</span><span class="s">"MemeDetailViewController"</span><span class="p">)</span> <span class="k">as!</span> <span class="kt">MemeDetailViewController</span>
+  <span class="n">detailController</span><span class="o">.</span><span class="n">meme</span> <span class="o">=</span> <span class="n">memes</span><span class="p">[</span><span class="n">indexPath</span><span class="o">.</span><span class="n">row</span><span class="p">]</span>
+  <span class="n">navigationController</span><span class="o">!.</span><span class="nf">pushViewController</span><span class="p">(</span><span class="n">detailController</span><span class="p">,</span> <span class="nv">animated</span><span class="p">:</span> <span class="kc">true</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Data was shared between the MemeEditorViewController, TableViewController, and UICollectionViewController by using a shared model.</p>
+
+<p>The shared model for this particular application is <code>memes</code>. They sit within the AppDelegate. Although sometimes controversial, I add the Meme model to the AppDelegate since it’s the simplest place to put it. XCodes coredata templates do this also, so there&rsquo;s good precedence. </p>
+
+<p>From there, each view loads the Meme shared model and interacts with it to present and in the case of UITableView, also destroy the data.</p>
+<pre class="highlight swift"><code><span class="c1">// AppDelegate</span>
+<span class="k">var</span> <span class="nv">memes</span> <span class="o">=</span> <span class="p">[</span><span class="kt">Meme</span><span class="p">]()</span>
+
+<span class="c1">// UITableView &amp; UICollectionView</span>
+<span class="k">override</span> <span class="kd">func</span> <span class="nf">viewDidAppear</span><span class="p">(</span><span class="nv">animated</span><span class="p">:</span> <span class="kt">Bool</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">super</span><span class="o">.</span><span class="nf">viewDidAppear</span><span class="p">(</span><span class="kc">true</span><span class="p">)</span>
+
+    <span class="k">let</span> <span class="nv">object</span> <span class="o">=</span> <span class="kt">UIApplication</span><span class="o">.</span><span class="nf">sharedApplication</span><span class="p">()</span><span class="o">.</span><span class="n">delegate</span>
+    <span class="k">let</span> <span class="nv">appDelegate</span> <span class="o">=</span> <span class="n">object</span> <span class="k">as!</span> <span class="kt">AppDelegate</span>
+    <span class="n">memes</span> <span class="o">=</span> <span class="n">appDelegate</span><span class="o">.</span><span class="n">memes</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>I also set out to add a better meme preview than the default one that was being displayed from the Memed image being saved in the meme model. I decided on creating a custom UITableViewCell as well, adding the top meme text, bottom meme text, and original image to re-create a preview that could fit within a square. I created a similar UICollectionViewCell for the same purposes, this way each preview looked uniform and cohesive.</p>
+
+<p>With some minor adjustments, I was able to exceed the criteria for the Udacity rubric. Adding the ability to select custom fonts and the capability to re-render the meme to fit inside of a preview square (in the table and collection views) was definitely worth the effort.</p>
+
+	</article>
+
+	<div class='article-nav'>
+      <div class="pull-right"><a class="active" href="/blog/2016/03/24/pitch.html">Next →</a></div>
+
+	</div>
+
+
+
+		<footer>
+			<p>© 2016 <a href="/" rel="home">Patrick Montalto</a></p>
+		</footer>
+		</div>
+  </body>
+</html>

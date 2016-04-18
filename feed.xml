@@ -5,10 +5,60 @@
   <id>http://blog.url.com/blog</id>
   <link href="http://blog.url.com/blog"/>
   <link href="http://blog.url.com/feed.xml" rel="self"/>
-  <updated>2016-03-23T20:55:00-04:00</updated>
+  <updated>2016-04-18T19:15:00-04:00</updated>
   <author>
     <name>Blog Author</name>
   </author>
+  <entry>
+    <title>UICollectionViews &amp; More</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2016/04/18/swift-_uicollectionviews_and_more.html"/>
+    <id>http://blog.url.com/blog/2016/04/18/swift-_uicollectionviews_and_more.html</id>
+    <published>2016-04-18T19:15:00-04:00</published>
+    <updated>2016-04-18T19:50:55-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;I&amp;rsquo;ve recently started working with collection views, and it&amp;rsquo;s been a relatively simple process (minus fiddling around with the layout).&lt;/p&gt;
+
+&lt;p&gt;I&amp;rsquo;ve been working with table views for a good few months now in my spare time and felt pretty comfortable with the methods of the UITableView DataSource and Delegate protocols. It was a natural transition to start learning the methods of CollectionView delegates and data sources as well.&lt;/p&gt;
+
+&lt;p&gt;I applied my learning to a Meme generator app, called MemeMe. The app presents a TableView and a CollectionView which show memes created using the application. The user can select whether they want to see their memes in a table view or a collection view by tapping the appropriate icon on the tab bar.&lt;/p&gt;
+
+&lt;p&gt;I implemented a separate NavigationController for the table view and collection view, and connected both via a TabBarController.&lt;/p&gt;
+
+&lt;p&gt;Tapping on a meme in the table view opens up a custom view controller, MemeDetailViewController. Within the 
+&lt;code&gt;tableView(_:didSelectRowAtIndexPath:)&lt;/code&gt; method, the navigation controller pushes the detail view ontop of the navigation stack and passes the specific meme to the detail view.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;tableView&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;tableView&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;UITableView&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;didSelectRowAtIndexPath&lt;/span&gt; &lt;span class="nv"&gt;indexPath&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;NSIndexPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="c1"&gt;// present meme detail view controller &lt;/span&gt;
+  &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;detailController&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;storyboard&lt;/span&gt;&lt;span class="o"&gt;!.&lt;/span&gt;&lt;span class="nf"&gt;instantiateViewControllerWithIdentifier&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"MemeDetailViewController"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;as!&lt;/span&gt; &lt;span class="kt"&gt;MemeDetailViewController&lt;/span&gt;
+  &lt;span class="n"&gt;detailController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;meme&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;memes&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;indexPath&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;row&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+  &lt;span class="n"&gt;navigationController&lt;/span&gt;&lt;span class="o"&gt;!.&lt;/span&gt;&lt;span class="nf"&gt;pushViewController&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;detailController&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;animated&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Data was shared between the MemeEditorViewController, TableViewController, and UICollectionViewController by using a shared model.&lt;/p&gt;
+
+&lt;p&gt;The shared model for this particular application is &lt;code&gt;memes&lt;/code&gt;. They sit within the AppDelegate. Although sometimes controversial, I add the Meme model to the AppDelegate since it’s the simplest place to put it. XCodes coredata templates do this also, so there&amp;rsquo;s good precedence. &lt;/p&gt;
+
+&lt;p&gt;From there, each view loads the Meme shared model and interacts with it to present and in the case of UITableView, also destroy the data.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// AppDelegate&lt;/span&gt;
+&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;memes&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Meme&lt;/span&gt;&lt;span class="p"&gt;]()&lt;/span&gt;
+
+&lt;span class="c1"&gt;// UITableView &amp;amp; UICollectionView&lt;/span&gt;
+&lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;viewDidAppear&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;animated&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;super&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;viewDidAppear&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;object&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;UIApplication&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;sharedApplication&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;delegate&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;appDelegate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;object&lt;/span&gt; &lt;span class="k"&gt;as!&lt;/span&gt; &lt;span class="kt"&gt;AppDelegate&lt;/span&gt;
+    &lt;span class="n"&gt;memes&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;appDelegate&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;memes&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;I also set out to add a better meme preview than the default one that was being displayed from the Memed image being saved in the meme model. I decided on creating a custom UITableViewCell as well, adding the top meme text, bottom meme text, and original image to re-create a preview that could fit within a square. I created a similar UICollectionViewCell for the same purposes, this way each preview looked uniform and cohesive.&lt;/p&gt;
+
+&lt;p&gt;With some minor adjustments, I was able to exceed the criteria for the Udacity rubric. Adding the ability to select custom fonts and the capability to re-render the meme to fit inside of a preview square (in the table and collection views) was definitely worth the effort.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>Pitch Perfect Completed</title>
     <link rel="alternate" href="http://blog.url.com/blog/2016/03/24/pitch.html"/>
@@ -175,8 +225,8 @@ Syntax:&lt;/p&gt;
   </entry>
   <entry>
     <title>Pitch Perfect 2</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2016/03/17/this-is-my-second-post.html"/>
-    <id>http://blog.url.com/blog/2016/03/17/this-is-my-second-post.html</id>
+    <link rel="alternate" href="http://blog.url.com/blog/2016/03/17/pitch-perfect-2.html"/>
+    <id>http://blog.url.com/blog/2016/03/17/pitch-perfect-2.html</id>
     <published>2016-03-16T20:32:00-04:00</published>
     <updated>2016-04-11T00:28:35-04:00</updated>
     <author>
