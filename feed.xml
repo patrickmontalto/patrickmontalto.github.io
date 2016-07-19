@@ -5,16 +5,36 @@
   <id>http://blog.url.com/blog</id>
   <link href="http://blog.url.com/blog"/>
   <link href="http://blog.url.com/feed.xml" rel="self"/>
-  <updated>2016-04-18T19:15:00-04:00</updated>
+  <updated>2016-07-19T14:05:00-04:00</updated>
   <author>
     <name>Blog Author</name>
   </author>
   <entry>
+    <title>Ruby Dojo</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2016/07/19/ruby-dojo.html"/>
+    <id>http://blog.url.com/blog/2016/07/19/ruby-dojo.html</id>
+    <published>2016-07-19T14:05:00-04:00</published>
+    <updated>2016-07-19T14:12:52-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;I recently finished my app Ruby Dojo. It&amp;rsquo;s up on the App Store today! Please check it out if you&amp;rsquo;re at all interested in learning the Ruby programming language, or just coding in general.&lt;/p&gt;
+
+&lt;p&gt;I have released the application with the first 4 courses as free. As time goes on I will continually add more courses and lessons in different Ruby topics. All future courses and lessons will be only between $1.99 or $2.99 for a bundle.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s the link on iTunes: &lt;a href="https://itunes.apple.com/app/ruby-dojo/id1135266277"&gt;Ruby Dojo&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Thanks!&lt;/p&gt;
+
+&lt;p&gt;&lt;img title="Ruby Dojo Icon" alt="logo" src="http://a4.mzstatic.com/us/r30/Purple60/v4/48/79/77/487977f4-e31e-a13f-5f11-2bddfb49cda6/icon175x175.png" /&gt;&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
     <title>UICollectionViews &amp; More</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2016/04/18/swift-_uicollectionviews_and_more.html"/>
-    <id>http://blog.url.com/blog/2016/04/18/swift-_uicollectionviews_and_more.html</id>
-    <published>2016-04-18T19:15:00-04:00</published>
-    <updated>2016-04-18T19:50:55-04:00</updated>
+    <link rel="alternate" href="http://blog.url.com/blog/2015/04/18/swift-_uicollectionviews_and_more.html"/>
+    <id>http://blog.url.com/blog/2015/04/18/swift-_uicollectionviews_and_more.html</id>
+    <published>2015-04-18T19:15:00-04:00</published>
+    <updated>2016-07-19T14:05:00-04:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -61,10 +81,10 @@
   </entry>
   <entry>
     <title>Pitch Perfect Completed</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2016/03/24/pitch.html"/>
-    <id>http://blog.url.com/blog/2016/03/24/pitch.html</id>
-    <published>2016-03-23T20:55:00-04:00</published>
-    <updated>2016-04-12T20:59:01-04:00</updated>
+    <link rel="alternate" href="http://blog.url.com/blog/2015/03/24/pitch.html"/>
+    <id>http://blog.url.com/blog/2015/03/24/pitch.html</id>
+    <published>2015-03-23T20:55:00-04:00</published>
+    <updated>2016-07-19T14:05:02-04:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -225,10 +245,10 @@ Syntax:&lt;/p&gt;
   </entry>
   <entry>
     <title>Pitch Perfect 2</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2016/03/17/pitch-perfect-2.html"/>
-    <id>http://blog.url.com/blog/2016/03/17/pitch-perfect-2.html</id>
-    <published>2016-03-16T20:32:00-04:00</published>
-    <updated>2016-04-11T00:28:35-04:00</updated>
+    <link rel="alternate" href="http://blog.url.com/blog/2015/03/17/pitch-perfect-2.html"/>
+    <id>http://blog.url.com/blog/2015/03/17/pitch-perfect-2.html</id>
+    <published>2015-03-16T20:32:00-04:00</published>
+    <updated>2016-07-19T14:04:54-04:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -253,10 +273,10 @@ Almost done with the app, I&amp;rsquo;ll update once I&amp;rsquo;ve finished the
   </entry>
   <entry>
     <title>Pitch Perfect</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2016/03/16/pitch-perfect.html"/>
-    <id>http://blog.url.com/blog/2016/03/16/pitch-perfect.html</id>
-    <published>2016-03-15T23:31:00-04:00</published>
-    <updated>2016-04-11T22:54:33-04:00</updated>
+    <link rel="alternate" href="http://blog.url.com/blog/2015/03/16/pitch-perfect.html"/>
+    <id>http://blog.url.com/blog/2015/03/16/pitch-perfect.html</id>
+    <published>2015-03-15T23:31:00-04:00</published>
+    <updated>2016-07-19T14:03:15-04:00</updated>
     <author>
       <name>Article Author</name>
     </author>
