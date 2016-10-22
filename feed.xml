@@ -14,7 +14,7 @@
     <link rel="alternate" href="http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html"/>
     <id>http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html</id>
     <published>2016-10-22T00:18:00-04:00</published>
-    <updated>2016-10-22T00:30:58-04:00</updated>
+    <updated>2016-10-22T00:33:56-04:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -312,33 +312,6 @@ Save audio using AVAudioRecorder
 Record data / model
 Pass data from one ViewController to another (pass data between segues)
 Almost done with the app, I&amp;rsquo;ll update once I&amp;rsquo;ve finished the entire rubric!&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>Pitch Perfect</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2015/03/16/pitch-perfect.html"/>
-    <id>http://blog.url.com/blog/2015/03/16/pitch-perfect.html</id>
-    <published>2015-03-15T23:31:00-04:00</published>
-    <updated>2016-07-19T14:03:15-04:00</updated>
-    <author>
-      <name>Article Author</name>
-    </author>
-    <content type="html">&lt;p&gt;I began Udacity&amp;rsquo;s iOS program yesterday to explore how in-depth it got with certain things that were being left out of Rob Percival&amp;rsquo;s Udemy iOS 9/Swift 2.0 course.&lt;/p&gt;
-
-&lt;p&gt;I am glad to say that I am pleasantly surprised to find there to be a good deal of interaction and good habit-forming techniques promoted. Although I am already quite familiar with Swift through BNR&amp;rsquo;s book and have built about 5-10 small apps through Treehouse and Udemy, it is refreshing to be in such a constructive learning environment like Udacity. &lt;/p&gt;
-
-&lt;p&gt;Here&amp;rsquo;s a summary of what I&amp;rsquo;ve done at Udacity my first day:&lt;/p&gt;
-
-&lt;p&gt;Import audio files
-Import images
-Play audio files
-Stop audio files
-change audio playback speed (rate)
-Reset audio playback position (reset to beginning)
-ViewController lifecycle
-This was the biggest thing so far, all of the aforementioned stuff I had already learned from Udemy or Treehouse.
-Some neat shortcuts in Xcode (hiding navigator/utilities, etc)
-All in all it was a good first day.&lt;/p&gt;
 </content>
   </entry>
 </feed>
