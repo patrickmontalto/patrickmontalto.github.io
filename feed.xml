@@ -14,7 +14,7 @@
     <link rel="alternate" href="http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html"/>
     <id>http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html</id>
     <published>2016-10-22T00:18:00-04:00</published>
-    <updated>2016-10-22T00:26:45-04:00</updated>
+    <updated>2016-10-22T00:29:01-04:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -26,7 +26,9 @@
     &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;dataSource&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;PhotoDataSource&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;
     &lt;span class="c1"&gt;// ...&lt;/span&gt;
 &lt;span class="p"&gt;}&lt;/span&gt;
+
 &lt;span class="c1"&gt;// MARK: - PhotoDeletionManagerDelegate {&lt;/span&gt;
+&lt;span class="kd"&gt;extension&lt;/span&gt; &lt;span class="kt"&gt;PhotoListController&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;PhotoDeletionManagerDelegate&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
     &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;didTapDelete&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;atIndexPath&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;IndexPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
         &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;photo&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;dataSource&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fetchedResultsController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;object&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;at&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;indexPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
         &lt;span class="c1"&gt;// ...&lt;/span&gt;

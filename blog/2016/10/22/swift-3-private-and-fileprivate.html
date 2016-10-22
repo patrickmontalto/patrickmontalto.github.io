@@ -55,7 +55,9 @@
     <span class="kd">private</span> <span class="k">var</span> <span class="nv">dataSource</span><span class="p">:</span> <span class="kt">PhotoDataSource</span><span class="o">!</span>
     <span class="c1">// ...</span>
 <span class="p">}</span>
+
 <span class="c1">// MARK: - PhotoDeletionManagerDelegate {</span>
+<span class="kd">extension</span> <span class="kt">PhotoListController</span><span class="p">:</span> <span class="kt">PhotoDeletionManagerDelegate</span> <span class="p">{</span>
     <span class="kd">func</span> <span class="nf">didTapDelete</span><span class="p">(</span><span class="nv">atIndexPath</span><span class="p">:</span> <span class="kt">IndexPath</span><span class="p">)</span> <span class="p">{</span>
         <span class="k">let</span> <span class="nv">photo</span> <span class="o">=</span> <span class="n">dataSource</span><span class="o">.</span><span class="n">fetchedResultsController</span><span class="o">.</span><span class="nf">object</span><span class="p">(</span><span class="nv">at</span><span class="p">:</span> <span class="n">indexPath</span><span class="p">)</span>
         <span class="c1">// ...</span>
