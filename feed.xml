@@ -14,7 +14,7 @@
     <link rel="alternate" href="http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html"/>
     <id>http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html</id>
     <published>2016-10-22T00:18:00-04:00</published>
-    <updated>2016-10-22T00:29:01-04:00</updated>
+    <updated>2016-10-22T00:30:58-04:00</updated>
     <author>
       <name>Article Author</name>
     </author>
@@ -47,9 +47,9 @@
 
 &lt;p&gt;Even though the Swift evolution proposal mentions that this change enables developers to spread the implementation of entities across multiple files, this doesn’t seem to be possible at the moment. My hope is that this changes in the future. &lt;/p&gt;
 
-&lt;p&gt;While I welcome making Swift adhere to more typical access control implementations, there seems to be a stirring in the community about how useful this change really was. There has been talk on the Swift mailing list that this change may be rolled back if it’s not widely used. One of the proposals is to alias &lt;code&gt;fileprivate&lt;/code&gt; back to &lt;code&gt;privat&lt;/code&gt; and make them synonymous, and deprecate the &lt;code&gt;fileprivate&lt;/code&gt; keyword.&lt;/p&gt;
+&lt;p&gt;While I welcome making Swift adhere to more typical access control implementations, there seems to be a stirring in the community about how useful this change really was. There has been talk on the Swift mailing list that this change may be rolled back if it’s not widely used. One of the proposals is to alias &lt;code&gt;fileprivate&lt;/code&gt; back to &lt;code&gt;private&lt;/code&gt; and make them synonymous, and deprecate the &lt;code&gt;fileprivate&lt;/code&gt; keyword.&lt;/p&gt;
 
-&lt;p&gt;I would prefer if Swift had a &lt;code&gt;typeprivate&lt;/code&gt; keyword, as this would be a more useful feature than private/fileprivate separation. This would help to separate code responsibility, help maintainability far more. The whole private/fileprivate argument may just be a way of dancing around better methods to organize API in the first place. It seemed like a great idea, but may it isn’t that great in practice. I’m glad Apple is considering the switch back.&lt;/p&gt;
+&lt;p&gt;I would prefer if Swift had a &lt;code&gt;typeprivate&lt;/code&gt; keyword, as this would be a more useful feature than private/fileprivate separation. This would help to separate code responsibility and help maintainability far more. The whole private/fileprivate argument may just be a way of dancing around better methods to organize API in the first place. It seemed like a great idea, but maybe it isn’t that great in practice. I’m glad Apple is considering the switch back.&lt;/p&gt;
 </content>
   </entry>
   <entry>
