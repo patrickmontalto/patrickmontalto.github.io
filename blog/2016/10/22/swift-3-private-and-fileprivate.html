@@ -1,0 +1,95 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>Swift 3 Private and Fileprivate</title>
+
+    
+    <script src="https://code.jquery.com/jquery-1.12.3.min.js" integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet' type='text/css'>
+    <script src="/javascripts/all.js"></script>
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/highlighting.css" rel="stylesheet" />
+  </head>
+  <body>
+     <nav class="navbar navbar-static-top">
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">patrickm.io</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          
+          <ul class="nav navbar-nav navbar-right">
+            <li class="no-hover">
+              <a href="/blog">blog</a>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+<article>
+		<h1 class="article-title">Swift 3 Private and Fileprivate</h1>
+		<p>Swift 3 introduced a new keyword: <code>fileprivate</code>. But how does it work compared to Swift 2.x <code>private</code>?</p>
+
+<p>If you&rsquo;re like me, you probably have private properties in many of your classes and structs. You then use extensions to conform to protocols so all of your code is placed in segmented blocks that are more maintainable and easier to navigate:</p>
+<pre class="highlight swift"><code><span class="kd">class</span> <span class="kt">PhotoListController</span><span class="p">:</span> <span class="kt">UIViewController</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="kd">private</span> <span class="k">var</span> <span class="nv">dataSource</span><span class="p">:</span> <span class="kt">PhotoDataSource</span><span class="o">!</span>
+    <span class="c1">// ...</span>
+<span class="p">}</span>
+<span class="c1">// MARK: - PhotoDeletionManagerDelegate {</span>
+    <span class="kd">func</span> <span class="nf">didTapDelete</span><span class="p">(</span><span class="nv">atIndexPath</span><span class="p">:</span> <span class="kt">IndexPath</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="nv">photo</span> <span class="o">=</span> <span class="n">dataSource</span><span class="o">.</span><span class="n">fetchedResultsController</span><span class="o">.</span><span class="nf">object</span><span class="p">(</span><span class="nv">at</span><span class="p">:</span> <span class="n">indexPath</span><span class="p">)</span>
+        <span class="c1">// ...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>This same code results in an error in Swift 3:
+<code>Use of unresolved identifier &#39;dataSource&#39;</code></p>
+
+<p>Why does this happen?</p>
+
+<p>Well, what was once <code>private</code> in Swift 2.x is now <code>fileprivate</code> in Swift 3. The intent behind this is to make <code>private</code> in Swift work more similarly to other programming languages: the properties marked at private are only accessible from within their lexical scope they are declared in. In this case: between the curly brackets.   Rarely am I doing something private where I really don’t want it private outside of the scope in the same file. Interestingly enough, the Swift 2.x to 3 migrator changes all <code>private</code> to <code>fileprivate</code>…so technically you’re not getting any extra safety out-of-the-box by having it. </p>
+
+<p>In order to achieve Swift 2.x access level privacy, use <code>fileprivate</code> instead of <code>private</code>.</p>
+
+<p>Even though the Swift evolution proposal mentions that this change enables developers to spread the implementation of entities across multiple files, this doesn’t seem to be possible at the moment. My hope is that this changes in the future. </p>
+
+<p>While I welcome making Swift adhere to more typical access control implementations, there seems to be a stirring in the community about how useful this change really was. There has been talk on the Swift mailing list that this change may be rolled back if it’s not widely used. One of the proposals is to alias <code>fileprivate</code> back to <code>privat</code> and make them synonymous, and deprecate the <code>fileprivate</code> keyword.</p>
+
+<p>I would prefer if Swift had a <code>typeprivate</code> keyword, as this would be a more useful feature than private/fileprivate separation. This would help to separate code responsibility, help maintainability far more. The whole private/fileprivate argument may just be a way of dancing around better methods to organize API in the first place. It seemed like a great idea, but may it isn’t that great in practice. I’m glad Apple is considering the switch back.</p>
+
+	</article>
+
+	<div class='article-nav'>
+      <div class="pull-right"><a class="active" href="/blog/2016/07/19/ruby-dojo.html">Next →</a></div>
+
+	</div>
+
+
+
+		<footer>
+			<p>© 2016 <a href="/" rel="home">Patrick Montalto</a></p>
+		</footer>
+		</div>
+  </body>
+</html>

@@ -5,10 +5,51 @@
   <id>http://blog.url.com/blog</id>
   <link href="http://blog.url.com/blog"/>
   <link href="http://blog.url.com/feed.xml" rel="self"/>
-  <updated>2016-07-19T14:05:00-04:00</updated>
+  <updated>2016-10-22T00:18:00-04:00</updated>
   <author>
     <name>Blog Author</name>
   </author>
+  <entry>
+    <title>Swift 3 Private and Fileprivate</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html"/>
+    <id>http://blog.url.com/blog/2016/10/22/swift-3-private-and-fileprivate.html</id>
+    <published>2016-10-22T00:18:00-04:00</published>
+    <updated>2016-10-22T00:26:45-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;Swift 3 introduced a new keyword: &lt;code&gt;fileprivate&lt;/code&gt;. But how does it work compared to Swift 2.x &lt;code&gt;private&lt;/code&gt;?&lt;/p&gt;
+
+&lt;p&gt;If you&amp;rsquo;re like me, you probably have private properties in many of your classes and structs. You then use extensions to conform to protocols so all of your code is placed in segmented blocks that are more maintainable and easier to navigate:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;PhotoListController&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;UIViewController&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="c1"&gt;// ...&lt;/span&gt;
+    &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;dataSource&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;PhotoDataSource&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;
+    &lt;span class="c1"&gt;// ...&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="c1"&gt;// MARK: - PhotoDeletionManagerDelegate {&lt;/span&gt;
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;didTapDelete&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;atIndexPath&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;IndexPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;photo&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;dataSource&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fetchedResultsController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;object&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;at&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;indexPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="c1"&gt;// ...&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This same code results in an error in Swift 3:
+&lt;code&gt;Use of unresolved identifier &amp;#39;dataSource&amp;#39;&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Why does this happen?&lt;/p&gt;
+
+&lt;p&gt;Well, what was once &lt;code&gt;private&lt;/code&gt; in Swift 2.x is now &lt;code&gt;fileprivate&lt;/code&gt; in Swift 3. The intent behind this is to make &lt;code&gt;private&lt;/code&gt; in Swift work more similarly to other programming languages: the properties marked at private are only accessible from within their lexical scope they are declared in. In this case: between the curly brackets.   Rarely am I doing something private where I really don’t want it private outside of the scope in the same file. Interestingly enough, the Swift 2.x to 3 migrator changes all &lt;code&gt;private&lt;/code&gt; to &lt;code&gt;fileprivate&lt;/code&gt;…so technically you’re not getting any extra safety out-of-the-box by having it. &lt;/p&gt;
+
+&lt;p&gt;In order to achieve Swift 2.x access level privacy, use &lt;code&gt;fileprivate&lt;/code&gt; instead of &lt;code&gt;private&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Even though the Swift evolution proposal mentions that this change enables developers to spread the implementation of entities across multiple files, this doesn’t seem to be possible at the moment. My hope is that this changes in the future. &lt;/p&gt;
+
+&lt;p&gt;While I welcome making Swift adhere to more typical access control implementations, there seems to be a stirring in the community about how useful this change really was. There has been talk on the Swift mailing list that this change may be rolled back if it’s not widely used. One of the proposals is to alias &lt;code&gt;fileprivate&lt;/code&gt; back to &lt;code&gt;privat&lt;/code&gt; and make them synonymous, and deprecate the &lt;code&gt;fileprivate&lt;/code&gt; keyword.&lt;/p&gt;
+
+&lt;p&gt;I would prefer if Swift had a &lt;code&gt;typeprivate&lt;/code&gt; keyword, as this would be a more useful feature than private/fileprivate separation. This would help to separate code responsibility, help maintainability far more. The whole private/fileprivate argument may just be a way of dancing around better methods to organize API in the first place. It seemed like a great idea, but may it isn’t that great in practice. I’m glad Apple is considering the switch back.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>Ruby Dojo</title>
     <link rel="alternate" href="http://blog.url.com/blog/2016/07/19/ruby-dojo.html"/>
