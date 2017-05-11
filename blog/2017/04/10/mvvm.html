@@ -1,0 +1,184 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>MVVM</title>
+
+    
+    <script src="https://code.jquery.com/jquery-1.12.3.min.js" integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet' type='text/css'>
+    <script src="/javascripts/all.js"></script>
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/highlighting.css" rel="stylesheet" />
+  </head>
+  
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">patrickm.io</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          
+          <ul class="nav navbar-nav navbar-right">
+            <li class="no-hover">
+              <a href="/blog">blog</a>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+<article>
+		<h1 class="article-title">MVVM</h1>
+		<p>Another MVVM Post?</p>
+
+<p>Yes, that&rsquo;s right!</p>
+
+<p>Cocoa frameworks owe their core architecture to the famous design pattern Model-View-Controller, or MVC. MVC is widely used throughout many programming disciplines, especially web development with Ruby on Rails or ASP.NET. For many, this pattern seems to work fine. However, over time many pragmatic developers have come to realize that MVC can often lead to bloated controllers (the old adage &ldquo;<strong>M</strong>assive <strong>V</strong>iew <strong>C</strong>ontroller references this) that contain too much of the presentation logic rather than interaction logic.</p>
+
+<p>This is where MVVM, or Model-View-ViewModel steps up at bat. It&rsquo;s gained a fair amount of traction in the Apple developer community in recent years. It shifts a good portion of the presentation logic over to objects called ViewModels. A simple concept that can have far-reaching benefits across a given codebase.</p>
+
+<h3>The Model</h3>
+
+<p>A Model&rsquo;s responsibility is to represent state in an application.</p>
+
+<p>The model object should:</p>
+
+<ul>
+<li>Not contain or own any View/ViewModel/Controller types.</li>
+<li>Not have member functions that take any of those types as parameters.</li>
+<li>No import statements for those types.</li>
+</ul>
+
+<h3>The ViewModel</h3>
+
+<p>A ViewModel processes data from a Model for a View. Following the single responsibility principle, it&rsquo;s job is to contain the <strong>view logic.</strong></p>
+
+<p>One of the simplest examples is a formatting a User object for presentation.</p>
+
+<p>Consider a simple User struct as our <strong>Model</strong>:</p>
+<pre class="highlight swift"><code><span class="c1">/// An individual user of the application.</span>
+<span class="kd">struct</span> <span class="kt">User</span> <span class="p">{</span>
+
+    <span class="c1">/// The given name of the user (first name).</span>
+    <span class="k">let</span> <span class="nv">givenName</span><span class="p">:</span> <span class="kt">String</span>
+
+    <span class="c1">/// The family name of the user (last name).</span>
+    <span class="k">let</span> <span class="nv">familyName</span><span class="p">:</span> <span class="kt">String</span>
+
+    <span class="c1">/// The birthdate of the user.</span>
+    <span class="k">let</span> <span class="nv">birthdate</span><span class="p">:</span> <span class="kt">Date</span>
+
+    <span class="c1">/// The points earned by the user.</span>
+    <span class="k">let</span> <span class="nv">points</span><span class="p">:</span> <span class="kt">Int</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Let&rsquo;s use a <strong>ViewModel</strong> to encapsulate the view state. Unlike the model state, this view state is transient and often does not require persistence.</p>
+<pre class="highlight swift"><code><span class="c1">/// Encapsulates the view logic for the User model.</span>
+<span class="kd">struct</span> <span class="kt">UserViewModel</span> <span class="p">{</span>
+
+    <span class="c1">/// The user object represented by this ViewModel.</span>
+    <span class="k">let</span> <span class="nv">user</span><span class="p">:</span> <span class="kt">User</span>
+
+    <span class="c1">/// The user's full name.</span>
+    <span class="k">var</span> <span class="nv">fullName</span><span class="p">:</span> <span class="kt">String</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="s">"</span><span class="se">\(</span><span class="n">user</span><span class="o">.</span><span class="n">givenName</span><span class="se">)</span><span class="s"> </span><span class="se">\(</span><span class="n">user</span><span class="o">.</span><span class="n">familyName</span><span class="se">)</span><span class="s">"</span>
+    <span class="p">}</span>
+
+    <span class="c1">/// The formatted date string representing the user's birthdate.</span>
+    <span class="k">var</span> <span class="nv">formattedBirthdateString</span><span class="p">:</span> <span class="kt">String</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="nf">type</span><span class="p">(</span><span class="nv">of</span><span class="p">:</span> <span class="k">self</span><span class="p">)</span><span class="o">.</span><span class="n">birthdateFormatter</span><span class="o">.</span><span class="nf">string</span><span class="p">(</span><span class="nv">from</span><span class="p">:</span> <span class="n">user</span><span class="o">.</span><span class="n">birthdate</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1">/// The formatted points strng of the user.</span>
+    <span class="k">var</span> <span class="nv">formattedPointsString</span><span class="p">:</span> <span class="kt">String</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="nv">pointString</span> <span class="o">=</span> <span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">points</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span> <span class="p">?</span> <span class="s">"point"</span> <span class="p">:</span> <span class="s">"points"</span>
+        <span class="k">return</span> <span class="s">"</span><span class="se">\(</span><span class="n">user</span><span class="o">.</span><span class="n">points</span><span class="se">)</span><span class="s"> </span><span class="se">\(</span><span class="n">pointString</span><span class="se">)</span><span class="s">"</span>
+    <span class="p">}</span>
+
+    <span class="c1">/// The date formatter used to format the user's birthdate.</span>
+    <span class="kd">private</span> <span class="kd">static</span> <span class="k">let</span> <span class="nv">birthdateFormatter</span><span class="p">:</span> <span class="kt">DateFormatter</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="k">let</span> <span class="nv">dateFormatter</span> <span class="o">=</span> <span class="kt">DateFormatter</span><span class="p">()</span>
+        <span class="n">dateFormatter</span><span class="o">.</span><span class="n">dateFormat</span> <span class="o">=</span> <span class="s">"MMM d, yyyy"</span>
+        <span class="k">return</span> <span class="n">dateFormatter</span>
+    <span class="p">}()</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>We can now use this ViewModel as a property in a <strong>controller</strong>.</p>
+
+<h3>Controller</h3>
+
+<p>Controllers are responsible for managing the interaction of components.</p>
+
+<p>Let&rsquo;s take for instance, a <strong>UserProfileViewController</strong> that displays some information about a user. We can now just provide the view controller with a ViewModel in order to display the data. The Controller depends on the ViewModel in order to function. By including the viewModel in the initializer, we instantiate the controller with it&rsquo;s dependency. This is <strong>dependency injection</strong>.</p>
+<pre class="highlight swift"><code><span class="k">let</span> <span class="nv">vc</span> <span class="o">=</span> <span class="kt">UserProfileViewController</span><span class="p">(</span><span class="nv">nibName</span><span class="p">:</span> <span class="s">"UserProfileViewController"</span><span class="p">,</span> 
+                                   <span class="nv">bundle</span><span class="p">:</span> <span class="kc">nil</span><span class="p">,</span> 
+                                   <span class="nv">viewModel</span><span class="p">:</span> <span class="n">userViewModel</span><span class="p">)</span>
+</code></pre>
+<pre class="highlight swift"><code><span class="kd">class</span> <span class="kt">UserProfileViewController</span><span class="p">:</span> <span class="kt">UIViewController</span> <span class="p">{</span>
+    <span class="c1">/// The view model for the user. Setting this value will update the data displayed in the view.</span>
+    <span class="k">var</span> <span class="nv">viewModel</span><span class="p">:</span> <span class="kt">UserViewModel</span> <span class="p">{</span>
+        <span class="k">didSet</span> <span class="p">{</span>
+            <span class="n">userLabel</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">viewModel</span><span class="o">.</span><span class="n">fullName</span>
+            <span class="n">birthdateLabel</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">viewModel</span><span class="o">.</span><span class="n">formattedBirthdateString</span>
+            <span class="n">pointsLabel</span><span class="o">.</span><span class="n">text</span> <span class="o">=</span> <span class="n">viewModel</span><span class="o">.</span><span class="n">formattedPointsString</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Now we have a single property that can shuttle the model&rsquo;s presentation logic right into our view any time it is set.</p>
+
+<p>This becomes more powerful when you consider the use cases for table views and collection views.</p>
+
+<h3>Bonus: Testability</h3>
+
+<p>Another added benefit to dependency injection is allowing each type to have a single responsibility that can easily be unit tested:</p>
+<pre class="highlight swift"><code><span class="kd">func</span> <span class="nf">testUser</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">mockUser</span> <span class="o">=</span> <span class="kt">MockUser</span><span class="p">(</span><span class="nv">givenName</span><span class="p">:</span> <span class="o">...</span><span class="p">)</span>
+    <span class="k">let</span> <span class="nv">viewModel</span> <span class="o">=</span> <span class="kt">UserViewModel</span><span class="p">(</span><span class="nv">user</span><span class="p">:</span> <span class="n">mockUser</span><span class="p">)</span>
+    <span class="k">let</span> <span class="nv">vc</span> <span class="o">=</span> <span class="kt">UserProfileViewController</span><span class="p">(</span><span class="nv">nibName</span><span class="p">:</span> <span class="s">"UserProfileViewController"</span><span class="p">,</span> 
+                                       <span class="nv">bundle</span><span class="p">:</span> <span class="kc">nil</span><span class="p">,</span> 
+                                       <span class="nv">viewModel</span><span class="p">:</span> <span class="n">viewModel</span><span class="p">)</span>
+  <span class="c1">// Do tests here                                 </span>
+<span class="p">}</span>
+</code></pre>
+
+<p>As you can see, MVVM can offer much more than plain MVC. Adhering to the single responsibility principle allows for cleaner code that&rsquo;s easier to debug and test. Code that is easier to test is code that&rsquo;s easier to change - and as Alan Deutschman says, &quot;Change or Die.&rdquo;</p>
+
+<p>Well, maybe not that dramatic, but you get the point. <img class="gemoji" alt="smile" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f604.png" width="20" height="20" style="margin-bottom: 4px" /></p>
+
+	</article>
+
+	<div class='article-nav'>
+      <div class="pull-right"><a class="active" href="/blog/2017/04/05/swiftnetworking.html">Next →</a></div>
+
+      <span><a class="active" href="/blog/2017/05/11/ios-memory-management.html">← Previous</a></span>
+	</div>
+
+
+
+		<footer>
+			<p>© 2017 <a href="/" rel="home">Patrick Montalto</a></p>
+		</footer>
+		</div>
+  
+</html>

@@ -1,0 +1,390 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>iOS Memory Management</title>
+
+    
+    <script src="https://code.jquery.com/jquery-1.12.3.min.js" integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet' type='text/css'>
+    <script src="/javascripts/all.js"></script>
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/highlighting.css" rel="stylesheet" />
+  </head>
+  
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">patrickm.io</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          
+          <ul class="nav navbar-nav navbar-right">
+            <li class="no-hover">
+              <a href="/blog">blog</a>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+<article>
+		<h1 class="article-title">iOS Memory Management</h1>
+		<p>Avoiding memory leaks is an important skill for an iOS developer. Luckily, Swift handles much of the memory-management for us as developers through use of Automatic Reference Counting (ARC). ARC will take care of the reference counting for us, allocating and deallocating memory on our behalf. However, one needs to be mindful of how to define the relationships between those objects. The way we define relationships results in how ARC will deallocate. In other words, we need to tell ARC where to step in and when to take a hike.</p>
+
+<h3>ARC Functionality</h3>
+
+<ol>
+<li>ARC <strong>alloc</strong>ates a chunk of memory to store the information every time a new class instance is created via <code>init()</code>. This memory holds information about the <strong>type</strong> of instance, together with the <strong>values</strong> of any <strong>stored properties</strong>.</li>
+<li>When the instance is no longer needed, ARC frees up the memory used by that instance. This allows that memory to be used for other purposes instead. This is achieved via <code>deinit()</code>.</li>
+<li>If ARC were to deallocate an instance still in use, it would be impossible to access that instance&rsquo;s properties or methods. The app would most likely crash. ARC keeps track of what instances are currently being referred to, preventing such a scenario from happening.</li>
+<li>ARC maintains a <code>strong</code> reference to those class instance properties, constants, and variables to restrict deallocation when the class instance is currently in use.</li>
+</ol>
+
+<h3>Objective-C</h3>
+
+<p>A common technique in iOS programming is to remove notification observers as soon as you no longer need the notifications. Typically, this would be done in the <code>dealloc</code> method.</p>
+
+<p>When ARC is turned on, <code>retain, release, retainCount, autorelease and dealloc</code> cannot be sent to objects. Instead, the compile inserts these messages at <code>compile time</code> automatically (including when overriding <code>dealloc</code>).</p>
+<pre class="highlight objective_c"><code><span class="c1">// ARC Disabled
+</span><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">dealloc</span> <span class="p">{</span>
+    <span class="p">[[</span><span class="n">NSNotificationCenter</span> <span class="nf">defaultCenter</span><span class="p">]</span> <span class="nf">removeObserver</span><span class="p">:</span> <span class="n">self</span><span class="p">]];</span>
+    <span class="p">[</span><span class="n">super</span> <span class="nf">dealloc</span><span class="p">];</span> <span class="c1">// Need to call superclass implementation
+</span><span class="p">}</span>
+
+<span class="c1">// ARC Enabled
+</span><span class="o">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">dealloc</span> <span class="p">{</span>
+    <span class="p">[[</span><span class="n">NSNotificationCenter</span> <span class="nf">defaultCenter</span><span class="p">]</span> <span class="nf">removeObserver</span><span class="p">:</span> <span class="n">self</span><span class="p">]];</span>
+    <span class="c1">// [super dealloc] called for us automatically.
+</span><span class="p">}</span>
+</code></pre>
+
+<h3>Going for a Swim</h3>
+
+<p>Autorelease pools can be used to allocate objects temporarily and retain them in memory until the pool is &ldquo;drained.&rdquo; With ARC disabled, an instance of <code>NSAutoreleasePool</code> can be created to achieve this. On the other hand, ARC uses <code>@autoreleasepool</code> blocks, encapsulating the allocation of the temp objects and dealloc&#39;ing them when the block end is reached.</p>
+<pre class="highlight objective_c"><code><span class="c1">// ARC Disabled
+</span><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loopThroughArray</span><span class="p">:(</span><span class="n">NSArray</span> <span class="o">*</span><span class="p">)</span><span class="nv">array</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">id</span> <span class="n">object</span> <span class="k">in</span> <span class="n">array</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">NSAutoreleasePool</span> <span class="o">*</span><span class="n">pool</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSAutoreleasePool</span> <span class="nf">alloc</span><span class="p">]</span> <span class="nf">init</span><span class="p">];</span>
+        <span class="c1">// Create a ton of temporary objects
+</span>        <span class="p">[</span><span class="n">pool</span> <span class="nf">drain</span><span class="p">];</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="c1">// ARC Enabled
+</span><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">loopThroughArray</span><span class="p">:(</span><span class="n">NSArray</span> <span class="o">*</span><span class="p">)</span><span class="nv">array</span> <span class="p">{</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">id</span> <span class="n">object</span> <span class="k">in</span> <span class="n">array</span><span class="p">)</span> <span class="p">{</span>
+        <span class="err">@autoreleasepool</span> <span class="p">{</span>
+            <span class="c1">// Create a ton of temporary objects
+</span>        <span class="p">}</span>
+    <span class="p">}</span>    
+<span class="p">}</span>
+</code></pre>
+
+<h3>Zeroing Weak References</h3>
+
+<p>ARC automatically clears (sets to nil) weak-reference local variables, instance variables, and declared properties immediately before the object being pointed to begins deallocating. This approach ensures that the pointer will go to either a valid object or <code>nil</code>. This avoids dangling pointers. To avoid crashes, ARC will <em>not</em> dealloc an instance as long as even one active reference still exists.</p>
+
+<h2>Strong Reference Cycles</h2>
+
+<p>ARC is able to deallocate memory for us automatically, however we can stumble into problems when we don&rsquo;t properly define the relationships between objects. Consider the scenario where two objects are no longer required, but each reference one another. With each object having a non-zero reference count, they both can never be deallocated! This is a <strong>strong reference cycle.</strong></p>
+
+<p>Let&rsquo;s look at an example of such a cycle in Swift. Here we have a <strong>User</strong> which can own one or more <strong>vehicles</strong>:</p>
+<pre class="highlight swift"><code><span class="kd">class</span> <span class="kt">User</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">name</span><span class="p">:</span> <span class="kt">String</span>
+
+    <span class="nf">init</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="kt">String</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"User </span><span class="se">\(</span><span class="n">name</span><span class="se">)</span><span class="s"> is initialized."</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Observe when user will be dealloc.</span>
+    <span class="kd">deinit</span> <span class="p">{</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"User </span><span class="se">\(</span><span class="n">name</span><span class="se">)</span><span class="s"> is being deallocated."</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="kt">Vehicle</span> <span class="p">{</span>
+
+    <span class="kd">enum</span> <span class="kt">VehicleType</span><span class="p">:</span> <span class="kt">String</span> <span class="p">{</span>
+        <span class="k">case</span> <span class="n">car</span><span class="p">,</span> <span class="n">truck</span><span class="p">,</span> <span class="n">motorcycle</span><span class="p">,</span> <span class="n">scooter</span><span class="p">,</span> <span class="n">flyingCar</span>
+    <span class="p">}</span>
+    <span class="k">let</span> <span class="nv">type</span><span class="p">:</span> <span class="kt">VehicleType</span>
+    <span class="k">var</span> <span class="nv">owner</span><span class="p">:</span> <span class="kt">User</span><span class="p">?</span>
+
+    <span class="nf">init</span><span class="p">(</span><span class="nv">type</span><span class="p">:</span> <span class="kt">VehicleType</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="n">type</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"Vehicle </span><span class="se">\(</span><span class="n">type</span><span class="o">.</span><span class="n">rawValue</span><span class="se">)</span><span class="s"> is initialized."</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Observe when vehicle will be dealloc.</span>
+    <span class="kd">deinit</span> <span class="p">{</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"Vehicle </span><span class="se">\(</span><span class="n">type</span><span class="o">.</span><span class="n">rawValue</span><span class="se">)</span><span class="s"> is being deallocated."</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Owner is an optional property of the Vehicle, since a Vehicle can exist without an owner.</p>
+
+<p>In order to test deallocation we&rsquo;re going to have to wrap our code in a <code>do</code> block. This creates an explicit scope for our code execution, making ARC attempt to deallocate objects with reference counts of zero when they go out of scope.</p>
+<pre class="highlight swift"><code><span class="k">do</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">flyingCar</span> <span class="o">=</span> <span class="kt">Vehicle</span><span class="p">(</span><span class="nv">type</span><span class="p">:</span> <span class="o">.</span><span class="n">flyingCar</span><span class="p">)</span>
+    <span class="k">var</span> <span class="nv">user1</span> <span class="o">=</span> <span class="kt">User</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"Johnny Appleseed"</span><span class="p">)</span>
+    <span class="n">flyingCar</span><span class="o">.</span><span class="n">owner</span> <span class="o">=</span> <span class="n">user1</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>So far so good, we see that <strong>both</strong> objects are <strong>initialized</strong> and <strong>deallocated</strong> appropriately. But we have a problem with our current implementation: the user has no reference to their vehicles. Let&rsquo;s fix that. Back in our User&rsquo;s class:</p>
+<pre class="highlight swift"><code><span class="kd">private(set)</span> <span class="k">var</span> <span class="nv">vehicles</span><span class="p">:</span> <span class="p">[</span><span class="kt">Vehicle</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+<span class="kd">func</span> <span class="nf">add</span><span class="p">(</span><span class="nv">vehicle</span><span class="p">:</span> <span class="kt">Vehicle</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">vehicles</span><span class="o">.</span><span class="nf">append</span><span class="p">(</span><span class="n">vehicle</span><span class="p">)</span>
+    <span class="n">vehicle</span><span class="o">.</span><span class="n">owner</span> <span class="o">=</span> <span class="k">self</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>This will add a <code>vehicle</code> to the user&rsquo;s <code>vehicles</code> array property. We&rsquo;ve implemented this method along with a private setter to minimize the interface of the user object.</p>
+<pre class="highlight swift"><code><span class="k">do</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">flyingCar</span> <span class="o">=</span> <span class="kt">Vehicle</span><span class="p">(</span><span class="nv">type</span><span class="p">:</span> <span class="o">.</span><span class="n">flyingCar</span><span class="p">)</span>
+    <span class="k">var</span> <span class="nv">user1</span> <span class="o">=</span> <span class="kt">User</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"Johnny Appleseed"</span><span class="p">)</span>
+    <span class="n">user1</span><span class="o">.</span><span class="nf">add</span><span class="p">(</span><span class="nv">vehicle</span><span class="p">:</span> <span class="n">flyingCar</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>And just like that, we&rsquo;ve created a <strong>strong reference cycle</strong>. The <code>flyingCar</code> has a strong reference to it&rsquo;s owner, <code>user1</code>, and <code>user1</code> has a strong reference to it&rsquo;s vehicles, which includes <code>flyingCar</code>. These objects are now stuck in memory and ARC does not deallocate them since their reference count never zeros out.</p>
+
+<h2>The Swift Approach</h2>
+
+<h3>Weak</h3>
+
+<p>In Swift, references to objects are strong unless they are declared as <code>weak</code> or <code>unowned</code>.</p>
+
+<p>Let&rsquo;s use a <code>weak</code> relationship modifier and break this reference cycle. Weak references don&rsquo;t increase the reference count of the object. They must also be <code>optional</code> types. When the reference count goes to zero, the reference is automatically set to be nil.</p>
+
+<p>Applying the fix as below:</p>
+<pre class="highlight swift"><code><span class="kt">Class</span> <span class="kt">Vehicle</span> <span class="p">{</span>
+    <span class="k">weak</span> <span class="k">var</span> <span class="nv">owner</span><span class="p">:</span> <span class="kt">User</span><span class="p">?</span>
+    <span class="c1">// rest of class implementation ...</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>And we&rsquo;ve fixed it! Now both flyingCar and user1 will be deallocated appropriately at the end of the <code>do</code> block.</p>
+
+<h3>Unowned</h3>
+
+<p>The <code>unowned</code> reference modifier also does not increase the reference count of the object. However, whereas a <code>weak</code> object is always optional and automatically becomes <code>nil</code> upon deinitialization, <code>unowned</code> references are never optional types. Due to this, <code>weak</code> references are always <strong>var</strong>s because they need to become nil, and unowned references can be either <code>var</code> or <code>let</code> constants.</p>
+
+<p>Let&rsquo;s see unowned in action. Consider an InsurancePolicy class:</p>
+<pre class="highlight swift"><code><span class="kd">class</span> <span class="kt">InsurancePolicy</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">name</span><span class="p">:</span> <span class="kt">String</span>
+    <span class="k">let</span> <span class="nv">cost</span><span class="p">:</span> <span class="kt">Float</span>
+    <span class="k">let</span> <span class="nv">user</span><span class="p">:</span> <span class="kt">User</span>
+
+    <span class="nf">init</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="kt">String</span><span class="p">,</span> <span class="nv">cost</span><span class="p">:</span> <span class="kt">Float</span><span class="p">,</span> <span class="nv">user</span><span class="p">:</span> <span class="kt">User</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">cost</span> <span class="o">=</span> <span class="n">cost</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">user</span> <span class="o">=</span> <span class="n">user</span>
+        <span class="n">user</span><span class="o">.</span><span class="n">insurancePolicies</span><span class="o">.</span><span class="nf">append</span><span class="p">(</span><span class="k">self</span><span class="p">)</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"Insurance policy </span><span class="se">\(</span><span class="n">name</span><span class="se">)</span><span class="s"> is initialized."</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="c1">// Observe when InsurancePolicy will be dealloc.</span>
+    <span class="kd">deinit</span> <span class="p">{</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"Insurance policy </span><span class="se">\(</span><span class="n">name</span><span class="se">)</span><span class="s"> is being deallocated."</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Going back into the <code>User</code> class, add a insurancePolicies property:</p>
+
+<p><code>var insurancePolicies: [InsurancePolicy] = []</code></p>
+
+<p>Back into the <code>Vehicle</code> class, add properties and functions for InsurancePolicies:</p>
+<pre class="highlight swift"><code><span class="k">var</span> <span class="nv">insurancePolicy</span><span class="p">:</span> <span class="kt">InsurancePolicy</span><span class="p">?</span>
+
+<span class="c1">// Associate the insurance policy to this vehicle.</span>
+<span class="kd">func</span> <span class="nf">provision</span><span class="p">(</span><span class="nv">policy</span><span class="p">:</span> <span class="kt">InsurancePolicy</span><span class="p">)</span> <span class="p">{</span>
+    <span class="k">self</span><span class="o">.</span><span class="n">insurancePolicy</span> <span class="o">=</span> <span class="n">policy</span>
+<span class="p">}</span>
+
+<span class="c1">// Remove the insurance policy from the vehicle.</span>
+<span class="kd">func</span> <span class="nf">decomission</span><span class="p">()</span> <span class="p">{</span>
+    <span class="k">self</span><span class="o">.</span><span class="n">insurancePolicy</span> <span class="o">=</span> <span class="kc">nil</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Modify the <code>do</code> block to resemble this:</p>
+<pre class="highlight swift"><code><span class="k">do</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">flyingCar</span> <span class="o">=</span> <span class="kt">Vehicle</span><span class="p">(</span><span class="nv">type</span><span class="p">:</span> <span class="o">.</span><span class="n">flyingCar</span><span class="p">)</span>
+    <span class="k">var</span> <span class="nv">user1</span> <span class="o">=</span> <span class="kt">User</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"Johnny Appleseed"</span><span class="p">)</span>
+    <span class="n">user1</span><span class="o">.</span><span class="nf">add</span><span class="p">(</span><span class="nv">vehicle</span><span class="p">:</span> <span class="n">flyingCar</span><span class="p">)</span>
+    <span class="k">let</span> <span class="nv">autoPolicy</span> <span class="o">=</span> <span class="kt">InsurancePolicy</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"AllCountry"</span><span class="p">,</span> <span class="nv">cost</span><span class="p">:</span> <span class="mf">1200.00</span><span class="p">,</span> <span class="nv">user</span><span class="p">:</span> <span class="n">user1</span><span class="p">)</span>
+    <span class="n">flyingCar</span><span class="o">.</span><span class="nf">provision</span><span class="p">(</span><span class="nv">policy</span><span class="p">:</span> <span class="n">autoPolicy</span><span class="p">)</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Now we&rsquo;ve got <strong>another strong reference cycle.</strong> How will we fix this one?</p>
+
+<p>We need to modify which reference will be considered <strong>unowned</strong>.</p>
+
+<p>The reference from <code>user1</code> to <code>autoPolicy</code> or the reference from <code>autoPolicy</code> to <code>user1</code> need to be modified. In this case, consider the actual relationship of these objects in the business domain. A user owns an insurance policy, and not the other way around. An insurance policy <strong>cannot</strong> exist without a <code>User</code> who owns it. Let&rsquo;s make the <code>user</code> reference in <code>InsurancePolicy</code> unowned to reflect this.</p>
+<pre class="highlight swift"><code><span class="kt">Class</span> <span class="kt">InsurancePolicy</span> <span class="p">{</span>
+    <span class="c1">// ...</span>
+    <span class="k">unowned</span> <span class="k">let</span> <span class="nv">user</span><span class="p">:</span> <span class="kt">User</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>And just like that, we&rsquo;ve fixed it! <code>user1</code> has a retain count of 0 at the end of the block. When <code>user1</code> dellocates, the retain count of <code>flyingCar</code> decrements from 1 to 0 and the retain count of <code>autoPolicy</code> decrements from 2 to 1. When <code>flyingCar</code> deallocates, the retain count of <code>autoPolicy</code> goes from 1 to 0, and then also deallocates.</p>
+
+<h3>Closures</h3>
+
+<p>Closures in Swift are a first-class type. They are reference types that can cause retain cycles just like other reference types. Closures capture the objects they perform operations on.</p>
+
+<p>Consider a class with a closure as a stored property where the closure performs operations to instance properties of the same class. This closure holds a reference to the class object through the captured value of <code>self</code>. This is a reference cycle.</p>
+
+<p>Let&rsquo;s modify our user object and create a new <code>do</code> block.</p>
+<pre class="highlight swift"><code><span class="kd">class</span> <span class="kt">User</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">givenName</span><span class="p">:</span> <span class="kt">String</span>
+    <span class="k">let</span> <span class="nv">familyName</span><span class="p">:</span> <span class="kt">String</span>
+
+    <span class="kd">lazy</span> <span class="k">var</span> <span class="nv">fullName</span><span class="p">:</span> <span class="p">()</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">"</span><span class="se">\(</span><span class="k">self</span><span class="o">.</span><span class="n">givenName</span><span class="se">)</span><span class="s"> </span><span class="se">\(</span><span class="k">self</span><span class="o">.</span><span class="n">familyName</span><span class="se">)</span><span class="s">"</span>
+    <span class="p">}</span>
+
+    <span class="nf">init</span><span class="p">(</span><span class="nv">givenName</span><span class="p">:</span> <span class="kt">String</span><span class="p">,</span> <span class="nv">familyName</span><span class="p">:</span> <span class="kt">String</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">givenName</span> <span class="o">=</span> <span class="n">givenName</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">familyName</span> <span class="o">=</span> <span class="n">familyName</span>
+
+        <span class="nf">print</span><span class="p">(</span><span class="s">"User </span><span class="se">\(</span><span class="n">givenName</span><span class="se">)</span><span class="s"> </span><span class="se">\(</span><span class="n">familyName</span><span class="se">)</span><span class="s"> is initialized."</span><span class="p">)</span>
+    <span class="p">}</span>
+
+    <span class="kd">deinit</span> <span class="p">{</span>
+        <span class="nf">print</span><span class="p">(</span><span class="s">"User </span><span class="se">\(</span><span class="n">givenName</span><span class="se">)</span><span class="s"> </span><span class="se">\(</span><span class="n">familyName</span><span class="se">)</span><span class="s"> is being dealloc."</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>This fullName closure will concatenate a users givenName and familyName into one string and return it when called. Notice the references to <code>self</code> in the method body in order to access the stored properties. When we execute the following <code>do</code> block, the user won&rsquo;t be dealloc because of this strong reference cycle:</p>
+<pre class="highlight swift"><code><span class="k">do</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">user1</span> <span class="o">=</span> <span class="kt">User1</span><span class="p">(</span><span class="nv">givenName</span><span class="p">:</span> <span class="s">"Mike"</span><span class="p">,</span> <span class="nv">familyName</span><span class="p">:</span> <span class="s">"Brady"</span><span class="p">)</span>
+    <span class="nf">print</span><span class="p">(</span><span class="n">user1</span><span class="o">.</span><span class="nf">fullName</span><span class="p">())</span>
+<span class="p">}</span>
+</code></pre>
+
+<h3>Breaking the Cycle, Part Deux</h3>
+
+<p>Luckily, Swift makes things simple for us yet again. By using a <code>capture list</code> in the closure, we&rsquo;re able to define the relationships between the closure and the captured objects just like we would when defining property relationships in class definitions.</p>
+<pre class="highlight swift"><code><span class="k">var</span> <span class="nv">a</span> <span class="o">=</span> <span class="mi">0</span>
+
+<span class="k">let</span> <span class="nv">newClosure</span> <span class="o">=</span> <span class="p">{</span> <span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">in</span>
+    <span class="nf">print</span><span class="p">(</span><span class="s">"</span><span class="se">\(</span><span class="n">a</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
+<span class="p">}</span>
+
+<span class="n">a</span> <span class="o">=</span> <span class="mi">9</span>
+
+<span class="nf">newClosure</span><span class="p">()</span>
+<span class="nf">print</span><span class="p">(</span><span class="s">"</span><span class="se">\(</span><span class="n">a</span><span class="se">)</span><span class="s">"</span><span class="p">)</span>
+</code></pre>
+
+<p>In the console we&rsquo;ll see <code>newClosure()</code> will print an <code>a</code> value of 0, whereas actually printing the current value of <code>a</code> will result in 9 being printed to the console.</p>
+
+<p>By putting variable <code>a</code> in the capture list, we&rsquo;ve made a copy of <code>a</code> at the point the closure was defined. It is now &lsquo;captured by value&rsquo; as opposed to being captured by reference. Had we not included <code>a</code> in the capture list, newClosure would have captured by reference and printed 9 as well.</p>
+
+<p>It is in this capture list we are able to define weak or unowned relationships between the objects and the closure. Modifying our user&rsquo;s <code>fullName()</code> closure with a capture list of <code>[unowned self]</code>. We chose <code>unowned</code> here because the closure <code>fullName()</code> could not exist when the instance of <code>User</code> has gone away. If we are sure that a referenced object from a closure will never deallocate, we can use <code>unowned</code>. However, it the referenced object <em>does</em> dealloc, we&rsquo;re not going to have a good time.</p>
+<pre class="highlight swift"><code><span class="kd">lazy</span> <span class="k">var</span> <span class="nv">fullName</span><span class="p">:</span> <span class="p">()</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">=</span> <span class="p">{</span> <span class="p">[</span><span class="k">unowned</span> <span class="k">self</span><span class="p">]</span> <span class="k">in</span>
+    <span class="s">"</span><span class="se">\(</span><span class="k">self</span><span class="o">.</span><span class="n">givenName</span><span class="se">)</span><span class="s"> </span><span class="se">\(</span><span class="k">self</span><span class="o">.</span><span class="n">familyName</span><span class="se">)</span><span class="s">"</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Yet another reference cycle bites the dust. We&rsquo;ve created an unowned shadow copy of self that is for use only inside the closure&rsquo;s scope.</p>
+
+<p>To avoid referencing a an object in the capture list that has been deallocated, we can use <code>weak</code> with a <code>guard</code> statement to handle the deallocated case.</p>
+<pre class="highlight swift"><code><span class="k">var</span> <span class="nv">aClosure</span><span class="p">:</span> <span class="p">()</span> <span class="o">-&gt;</span> <span class="kt">String</span> <span class="o">=</span> <span class="p">{</span> <span class="p">[</span><span class="k">weak</span> <span class="k">self</span><span class="p">]</span> <span class="k">in</span>
+    <span class="k">guard</span> <span class="k">let</span> <span class="nv">strongSelf</span> <span class="o">=</span> <span class="k">self</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="s">"Self was nil"</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="s">"self is </span><span class="se">\(</span><span class="n">strongSelf</span><span class="se">)</span><span class="s">"</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>The guard statement binds a new variable <code>strongSelf</code> from <code>weak self</code>. This is sometimes referred to as the strongself weakself dance. It&rsquo;s a powerful technique for handling nullability with objects captured by closures.</p>
+
+<h3>Bonus: Unowned + Implicitly Unwrapped Optionals!</h3>
+
+<p>The scenarios presented above demonstrate two situations:</p>
+
+<ul>
+<li><strong>weak references</strong> : A <code>Vehicle</code> can exist without a <code>User</code>, and a <code>User</code> can exist without a <code>Vehicle</code>.</li>
+<li><strong>unowned</strong> : An <code>InsurancePolicy</code> cannot exist without a <code>User</code>, but a <code>User</code> can exist without having any <code>InsurancePolicies</code> (in fact, we set it up to start with none!).</li>
+</ul>
+
+<p>But there exists a third scenario: <em>both</em> properties always need to have a value and <strong>neither</strong> property should ever be nil after initialization. It is in these situations that combining <code>unowned</code> with an implicitly unwrapped optional is useful. It let&rsquo;s us still access both properties directly once initialization is complete, without having to worry about optional unwrapping.</p>
+
+<p>Consider the following scenario, where an Building requires a Landlord, and a Landlord must own a building (otherwise they aren&rsquo;t much of a Landlord).</p>
+<pre class="highlight swift"><code><span class="kd">class</span> <span class="kt">Building</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">name</span><span class="p">:</span> <span class="kt">String</span>
+    <span class="k">var</span> <span class="nv">landlord</span><span class="p">:</span> <span class="kt">Landlord</span>
+
+    <span class="nf">init</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="kt">String</span><span class="p">,</span> <span class="nv">landlordName</span><span class="p">:</span> <span class="kt">String</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">landlord</span> <span class="o">=</span> <span class="kt">Landlord</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="n">landlordName</span><span class="p">,</span> <span class="nv">building</span><span class="p">:</span> <span class="k">self</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">class</span> <span class="kt">Landlord</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">name</span><span class="p">:</span> <span class="kt">String</span>
+    <span class="k">unowned</span> <span class="k">let</span> <span class="nv">building</span><span class="p">:</span> <span class="kt">Building</span>
+    <span class="nf">init</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="kt">String</span><span class="p">,</span> <span class="nv">building</span><span class="p">:</span> <span class="kt">Building</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">self</span><span class="o">.</span><span class="n">building</span> <span class="o">=</span> <span class="n">building</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>The initializer for <code>Landlord</code> is called from within the initializer for <code>Building.</code> However, the initializer for <code>Building</code> cannot pass <code>self</code> to the <code>Landlord</code> initializer until a new <code>Building</code> instance has completed Phase-1 initialization.</p>
+
+<p>In order to deal with this, we declare <code>landlord</code> property of <code>Building</code> as an implicitly unwrapped optional property. This means that <code>landlord</code> has a default property value of <code>nil</code>, but can be accessed without the need to unwrap its value. Since <code>landlord</code> has a default value of <code>nil</code>, phase-1 initialization is considered complete since all properties of <code>Building</code> have been set, and now we&rsquo;re able to reference <code>self</code> and pass it into the initializer for <code>Landlord</code>.</p>
+
+<p>Through this technique we&rsquo;re able to create an instance of <code>Landlord</code> and an instance of <code>Building</code> all in a single statement without a strong reference cycle or having to unwrap an optional value.</p>
+
+<h3>Parting Tip: Weak or Unowned?</h3>
+
+<p>Here&rsquo;s a quick tip to remember which modifier to use.</p>
+
+<p>Can the referenced object ever be nil / can this object exist without this reference / can this object outlive the referenced object?</p>
+
+<p>YES: <strong>weak</strong> (zeroing)</p>
+
+<p>NO: <strong>unowned</strong> (non-zeroing)</p>
+
+	</article>
+
+	<div class='article-nav'>
+      <div class="pull-right"><a class="active" href="/blog/2017/04/10/mvvm.html">Next →</a></div>
+
+	</div>
+
+
+
+		<footer>
+			<p>© 2017 <a href="/" rel="home">Patrick Montalto</a></p>
+		</footer>
+		</div>
+  
+</html>

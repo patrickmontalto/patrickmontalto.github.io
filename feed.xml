@@ -5,10 +5,477 @@
   <id>http://blog.url.com/blog</id>
   <link href="http://blog.url.com/blog"/>
   <link href="http://blog.url.com/feed.xml" rel="self"/>
-  <updated>2017-04-05T16:07:00-04:00</updated>
+  <updated>2017-05-10T20:11:00-04:00</updated>
   <author>
     <name>Blog Author</name>
   </author>
+  <entry>
+    <title>iOS Memory Management</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2017/05/11/ios-memory-management.html"/>
+    <id>http://blog.url.com/blog/2017/05/11/ios-memory-management.html</id>
+    <published>2017-05-10T20:11:00-04:00</published>
+    <updated>2017-05-10T21:08:27-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;Avoiding memory leaks is an important skill for an iOS developer. Luckily, Swift handles much of the memory-management for us as developers through use of Automatic Reference Counting (ARC). ARC will take care of the reference counting for us, allocating and deallocating memory on our behalf. However, one needs to be mindful of how to define the relationships between those objects. The way we define relationships results in how ARC will deallocate. In other words, we need to tell ARC where to step in and when to take a hike.&lt;/p&gt;
+
+&lt;h3&gt;ARC Functionality&lt;/h3&gt;
+
+&lt;ol&gt;
+&lt;li&gt;ARC &lt;strong&gt;alloc&lt;/strong&gt;ates a chunk of memory to store the information every time a new class instance is created via &lt;code&gt;init()&lt;/code&gt;. This memory holds information about the &lt;strong&gt;type&lt;/strong&gt; of instance, together with the &lt;strong&gt;values&lt;/strong&gt; of any &lt;strong&gt;stored properties&lt;/strong&gt;.&lt;/li&gt;
+&lt;li&gt;When the instance is no longer needed, ARC frees up the memory used by that instance. This allows that memory to be used for other purposes instead. This is achieved via &lt;code&gt;deinit()&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;If ARC were to deallocate an instance still in use, it would be impossible to access that instance&amp;rsquo;s properties or methods. The app would most likely crash. ARC keeps track of what instances are currently being referred to, preventing such a scenario from happening.&lt;/li&gt;
+&lt;li&gt;ARC maintains a &lt;code&gt;strong&lt;/code&gt; reference to those class instance properties, constants, and variables to restrict deallocation when the class instance is currently in use.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h3&gt;Objective-C&lt;/h3&gt;
+
+&lt;p&gt;A common technique in iOS programming is to remove notification observers as soon as you no longer need the notifications. Typically, this would be done in the &lt;code&gt;dealloc&lt;/code&gt; method.&lt;/p&gt;
+
+&lt;p&gt;When ARC is turned on, &lt;code&gt;retain, release, retainCount, autorelease and dealloc&lt;/code&gt; cannot be sent to objects. Instead, the compile inserts these messages at &lt;code&gt;compile time&lt;/code&gt; automatically (including when overriding &lt;code&gt;dealloc&lt;/code&gt;).&lt;/p&gt;
+&lt;pre class="highlight objective_c"&gt;&lt;code&gt;&lt;span class="c1"&gt;// ARC Disabled
+&lt;/span&gt;&lt;span class="k"&gt;-&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;void&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;dealloc&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="p"&gt;[[&lt;/span&gt;&lt;span class="n"&gt;NSNotificationCenter&lt;/span&gt; &lt;span class="nf"&gt;defaultCenter&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="nf"&gt;removeObserver&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;self&lt;/span&gt;&lt;span class="p"&gt;]];&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;super&lt;/span&gt; &lt;span class="nf"&gt;dealloc&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt; &lt;span class="c1"&gt;// Need to call superclass implementation
+&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="c1"&gt;// ARC Enabled
+&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;void&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="n"&gt;dealloc&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="p"&gt;[[&lt;/span&gt;&lt;span class="n"&gt;NSNotificationCenter&lt;/span&gt; &lt;span class="nf"&gt;defaultCenter&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="nf"&gt;removeObserver&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;self&lt;/span&gt;&lt;span class="p"&gt;]];&lt;/span&gt;
+    &lt;span class="c1"&gt;// [super dealloc] called for us automatically.
+&lt;/span&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;Going for a Swim&lt;/h3&gt;
+
+&lt;p&gt;Autorelease pools can be used to allocate objects temporarily and retain them in memory until the pool is &amp;ldquo;drained.&amp;rdquo; With ARC disabled, an instance of &lt;code&gt;NSAutoreleasePool&lt;/code&gt; can be created to achieve this. On the other hand, ARC uses &lt;code&gt;@autoreleasepool&lt;/code&gt; blocks, encapsulating the allocation of the temp objects and dealloc&amp;#39;ing them when the block end is reached.&lt;/p&gt;
+&lt;pre class="highlight objective_c"&gt;&lt;code&gt;&lt;span class="c1"&gt;// ARC Disabled
+&lt;/span&gt;&lt;span class="k"&gt;-&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;void&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="nf"&gt;loopThroughArray&lt;/span&gt;&lt;span class="p"&gt;:(&lt;/span&gt;&lt;span class="n"&gt;NSArray&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="nv"&gt;array&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;id&lt;/span&gt; &lt;span class="n"&gt;object&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;NSAutoreleasePool&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="n"&gt;pool&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[[&lt;/span&gt;&lt;span class="n"&gt;NSAutoreleasePool&lt;/span&gt; &lt;span class="nf"&gt;alloc&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+        &lt;span class="c1"&gt;// Create a ton of temporary objects
+&lt;/span&gt;        &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;pool&lt;/span&gt; &lt;span class="nf"&gt;drain&lt;/span&gt;&lt;span class="p"&gt;];&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="c1"&gt;// ARC Enabled
+&lt;/span&gt;&lt;span class="k"&gt;-&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;void&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="nf"&gt;loopThroughArray&lt;/span&gt;&lt;span class="p"&gt;:(&lt;/span&gt;&lt;span class="n"&gt;NSArray&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="nv"&gt;array&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;id&lt;/span&gt; &lt;span class="n"&gt;object&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt; &lt;span class="n"&gt;array&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="err"&gt;@autoreleasepool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="c1"&gt;// Create a ton of temporary objects
+&lt;/span&gt;        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;    
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;Zeroing Weak References&lt;/h3&gt;
+
+&lt;p&gt;ARC automatically clears (sets to nil) weak-reference local variables, instance variables, and declared properties immediately before the object being pointed to begins deallocating. This approach ensures that the pointer will go to either a valid object or &lt;code&gt;nil&lt;/code&gt;. This avoids dangling pointers. To avoid crashes, ARC will &lt;em&gt;not&lt;/em&gt; dealloc an instance as long as even one active reference still exists.&lt;/p&gt;
+
+&lt;h2&gt;Strong Reference Cycles&lt;/h2&gt;
+
+&lt;p&gt;ARC is able to deallocate memory for us automatically, however we can stumble into problems when we don&amp;rsquo;t properly define the relationships between objects. Consider the scenario where two objects are no longer required, but each reference one another. With each object having a non-zero reference count, they both can never be deallocated! This is a &lt;strong&gt;strong reference cycle.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s look at an example of such a cycle in Swift. Here we have a &lt;strong&gt;User&lt;/strong&gt; which can own one or more &lt;strong&gt;vehicles&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+
+    &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"User &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is initialized."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c1"&gt;// Observe when user will be dealloc.&lt;/span&gt;
+    &lt;span class="kd"&gt;deinit&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"User &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is being deallocated."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;Vehicle&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="kd"&gt;enum&lt;/span&gt; &lt;span class="kt"&gt;VehicleType&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="n"&gt;car&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;truck&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;motorcycle&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;scooter&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;flyingCar&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;type&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;VehicleType&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;owner&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt;
+
+    &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;type&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;VehicleType&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;type&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;type&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Vehicle &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;type&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rawValue&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is initialized."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c1"&gt;// Observe when vehicle will be dealloc.&lt;/span&gt;
+    &lt;span class="kd"&gt;deinit&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Vehicle &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;type&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rawValue&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is being deallocated."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Owner is an optional property of the Vehicle, since a Vehicle can exist without an owner.&lt;/p&gt;
+
+&lt;p&gt;In order to test deallocation we&amp;rsquo;re going to have to wrap our code in a &lt;code&gt;do&lt;/code&gt; block. This creates an explicit scope for our code execution, making ARC attempt to deallocate objects with reference counts of zero when they go out of scope.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;flyingCar&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Vehicle&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;type&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flyingCar&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;user1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Johnny Appleseed"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;flyingCar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;owner&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;user1&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;So far so good, we see that &lt;strong&gt;both&lt;/strong&gt; objects are &lt;strong&gt;initialized&lt;/strong&gt; and &lt;strong&gt;deallocated&lt;/strong&gt; appropriately. But we have a problem with our current implementation: the user has no reference to their vehicles. Let&amp;rsquo;s fix that. Back in our User&amp;rsquo;s class:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;private(set)&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;vehicles&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Vehicle&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+
+&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;add&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vehicle&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Vehicle&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;vehicles&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vehicle&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;vehicle&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;owner&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;self&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This will add a &lt;code&gt;vehicle&lt;/code&gt; to the user&amp;rsquo;s &lt;code&gt;vehicles&lt;/code&gt; array property. We&amp;rsquo;ve implemented this method along with a private setter to minimize the interface of the user object.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;flyingCar&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Vehicle&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;type&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flyingCar&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;user1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Johnny Appleseed"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;user1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;add&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vehicle&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;flyingCar&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And just like that, we&amp;rsquo;ve created a &lt;strong&gt;strong reference cycle&lt;/strong&gt;. The &lt;code&gt;flyingCar&lt;/code&gt; has a strong reference to it&amp;rsquo;s owner, &lt;code&gt;user1&lt;/code&gt;, and &lt;code&gt;user1&lt;/code&gt; has a strong reference to it&amp;rsquo;s vehicles, which includes &lt;code&gt;flyingCar&lt;/code&gt;. These objects are now stuck in memory and ARC does not deallocate them since their reference count never zeros out.&lt;/p&gt;
+
+&lt;h2&gt;The Swift Approach&lt;/h2&gt;
+
+&lt;h3&gt;Weak&lt;/h3&gt;
+
+&lt;p&gt;In Swift, references to objects are strong unless they are declared as &lt;code&gt;weak&lt;/code&gt; or &lt;code&gt;unowned&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s use a &lt;code&gt;weak&lt;/code&gt; relationship modifier and break this reference cycle. Weak references don&amp;rsquo;t increase the reference count of the object. They must also be &lt;code&gt;optional&lt;/code&gt; types. When the reference count goes to zero, the reference is automatically set to be nil.&lt;/p&gt;
+
+&lt;p&gt;Applying the fix as below:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kt"&gt;Class&lt;/span&gt; &lt;span class="kt"&gt;Vehicle&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;weak&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;owner&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt;
+    &lt;span class="c1"&gt;// rest of class implementation ...&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And we&amp;rsquo;ve fixed it! Now both flyingCar and user1 will be deallocated appropriately at the end of the &lt;code&gt;do&lt;/code&gt; block.&lt;/p&gt;
+
+&lt;h3&gt;Unowned&lt;/h3&gt;
+
+&lt;p&gt;The &lt;code&gt;unowned&lt;/code&gt; reference modifier also does not increase the reference count of the object. However, whereas a &lt;code&gt;weak&lt;/code&gt; object is always optional and automatically becomes &lt;code&gt;nil&lt;/code&gt; upon deinitialization, &lt;code&gt;unowned&lt;/code&gt; references are never optional types. Due to this, &lt;code&gt;weak&lt;/code&gt; references are always &lt;strong&gt;var&lt;/strong&gt;s because they need to become nil, and unowned references can be either &lt;code&gt;var&lt;/code&gt; or &lt;code&gt;let&lt;/code&gt; constants.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s see unowned in action. Consider an InsurancePolicy class:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;InsurancePolicy&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;cost&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Float&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;
+
+    &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;cost&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Float&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;cost&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;cost&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;
+        &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;insurancePolicies&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;append&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Insurance policy &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is initialized."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c1"&gt;// Observe when InsurancePolicy will be dealloc.&lt;/span&gt;
+    &lt;span class="kd"&gt;deinit&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Insurance policy &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is being deallocated."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Going back into the &lt;code&gt;User&lt;/code&gt; class, add a insurancePolicies property:&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;var insurancePolicies: [InsurancePolicy] = []&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;Back into the &lt;code&gt;Vehicle&lt;/code&gt; class, add properties and functions for InsurancePolicies:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;insurancePolicy&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;InsurancePolicy&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt;
+
+&lt;span class="c1"&gt;// Associate the insurance policy to this vehicle.&lt;/span&gt;
+&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;provision&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;policy&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;InsurancePolicy&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;insurancePolicy&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;policy&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="c1"&gt;// Remove the insurance policy from the vehicle.&lt;/span&gt;
+&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;decomission&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;insurancePolicy&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Modify the &lt;code&gt;do&lt;/code&gt; block to resemble this:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;flyingCar&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Vehicle&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;type&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;flyingCar&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;user1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Johnny Appleseed"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;user1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;add&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;vehicle&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;flyingCar&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;autoPolicy&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;InsurancePolicy&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"AllCountry"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;cost&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mf"&gt;1200.00&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;user1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="n"&gt;flyingCar&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;provision&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;policy&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;autoPolicy&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we&amp;rsquo;ve got &lt;strong&gt;another strong reference cycle.&lt;/strong&gt; How will we fix this one?&lt;/p&gt;
+
+&lt;p&gt;We need to modify which reference will be considered &lt;strong&gt;unowned&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;The reference from &lt;code&gt;user1&lt;/code&gt; to &lt;code&gt;autoPolicy&lt;/code&gt; or the reference from &lt;code&gt;autoPolicy&lt;/code&gt; to &lt;code&gt;user1&lt;/code&gt; need to be modified. In this case, consider the actual relationship of these objects in the business domain. A user owns an insurance policy, and not the other way around. An insurance policy &lt;strong&gt;cannot&lt;/strong&gt; exist without a &lt;code&gt;User&lt;/code&gt; who owns it. Let&amp;rsquo;s make the &lt;code&gt;user&lt;/code&gt; reference in &lt;code&gt;InsurancePolicy&lt;/code&gt; unowned to reflect this.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kt"&gt;Class&lt;/span&gt; &lt;span class="kt"&gt;InsurancePolicy&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="c1"&gt;// ...&lt;/span&gt;
+    &lt;span class="k"&gt;unowned&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;And just like that, we&amp;rsquo;ve fixed it! &lt;code&gt;user1&lt;/code&gt; has a retain count of 0 at the end of the block. When &lt;code&gt;user1&lt;/code&gt; dellocates, the retain count of &lt;code&gt;flyingCar&lt;/code&gt; decrements from 1 to 0 and the retain count of &lt;code&gt;autoPolicy&lt;/code&gt; decrements from 2 to 1. When &lt;code&gt;flyingCar&lt;/code&gt; deallocates, the retain count of &lt;code&gt;autoPolicy&lt;/code&gt; goes from 1 to 0, and then also deallocates.&lt;/p&gt;
+
+&lt;h3&gt;Closures&lt;/h3&gt;
+
+&lt;p&gt;Closures in Swift are a first-class type. They are reference types that can cause retain cycles just like other reference types. Closures capture the objects they perform operations on.&lt;/p&gt;
+
+&lt;p&gt;Consider a class with a closure as a stored property where the closure performs operations to instance properties of the same class. This closure holds a reference to the class object through the captured value of &lt;code&gt;self&lt;/code&gt;. This is a reference cycle.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s modify our user object and create a new &lt;code&gt;do&lt;/code&gt; block.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;givenName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;familyName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+
+    &lt;span class="kd"&gt;lazy&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;fullName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;givenName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;familyName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;givenName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;familyName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;givenName&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;givenName&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;familyName&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;familyName&lt;/span&gt;
+
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"User &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;givenName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;familyName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is initialized."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="kd"&gt;deinit&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"User &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;givenName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;familyName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; is being dealloc."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;This fullName closure will concatenate a users givenName and familyName into one string and return it when called. Notice the references to &lt;code&gt;self&lt;/code&gt; in the method body in order to access the stored properties. When we execute the following &lt;code&gt;do&lt;/code&gt; block, the user won&amp;rsquo;t be dealloc because of this strong reference cycle:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;do&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;user1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;User1&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;givenName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Mike"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;familyName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Brady"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;user1&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;fullName&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h3&gt;Breaking the Cycle, Part Deux&lt;/h3&gt;
+
+&lt;p&gt;Luckily, Swift makes things simple for us yet again. By using a &lt;code&gt;capture list&lt;/code&gt; in the closure, we&amp;rsquo;re able to define the relationships between the closure and the captured objects just like we would when defining property relationships in class definitions.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;a&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;0&lt;/span&gt;
+
+&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;newClosure&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="n"&gt;a&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;9&lt;/span&gt;
+
+&lt;span class="nf"&gt;newClosure&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;a&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In the console we&amp;rsquo;ll see &lt;code&gt;newClosure()&lt;/code&gt; will print an &lt;code&gt;a&lt;/code&gt; value of 0, whereas actually printing the current value of &lt;code&gt;a&lt;/code&gt; will result in 9 being printed to the console.&lt;/p&gt;
+
+&lt;p&gt;By putting variable &lt;code&gt;a&lt;/code&gt; in the capture list, we&amp;rsquo;ve made a copy of &lt;code&gt;a&lt;/code&gt; at the point the closure was defined. It is now &amp;lsquo;captured by value&amp;rsquo; as opposed to being captured by reference. Had we not included &lt;code&gt;a&lt;/code&gt; in the capture list, newClosure would have captured by reference and printed 9 as well.&lt;/p&gt;
+
+&lt;p&gt;It is in this capture list we are able to define weak or unowned relationships between the objects and the closure. Modifying our user&amp;rsquo;s &lt;code&gt;fullName()&lt;/code&gt; closure with a capture list of &lt;code&gt;[unowned self]&lt;/code&gt;. We chose &lt;code&gt;unowned&lt;/code&gt; here because the closure &lt;code&gt;fullName()&lt;/code&gt; could not exist when the instance of &lt;code&gt;User&lt;/code&gt; has gone away. If we are sure that a referenced object from a closure will never deallocate, we can use &lt;code&gt;unowned&lt;/code&gt;. However, it the referenced object &lt;em&gt;does&lt;/em&gt; dealloc, we&amp;rsquo;re not going to have a good time.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;lazy&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;fullName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="k"&gt;unowned&lt;/span&gt; &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;givenName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;familyName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Yet another reference cycle bites the dust. We&amp;rsquo;ve created an unowned shadow copy of self that is for use only inside the closure&amp;rsquo;s scope.&lt;/p&gt;
+
+&lt;p&gt;To avoid referencing a an object in the capture list that has been deallocated, we can use &lt;code&gt;weak&lt;/code&gt; with a &lt;code&gt;guard&lt;/code&gt; statement to handle the deallocated case.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;aClosure&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="k"&gt;weak&lt;/span&gt; &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+    &lt;span class="k"&gt;guard&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;strongSelf&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="k"&gt;self&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="s"&gt;"Self was nil"&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="s"&gt;"self is &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;strongSelf&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The guard statement binds a new variable &lt;code&gt;strongSelf&lt;/code&gt; from &lt;code&gt;weak self&lt;/code&gt;. This is sometimes referred to as the strongself weakself dance. It&amp;rsquo;s a powerful technique for handling nullability with objects captured by closures.&lt;/p&gt;
+
+&lt;h3&gt;Bonus: Unowned + Implicitly Unwrapped Optionals!&lt;/h3&gt;
+
+&lt;p&gt;The scenarios presented above demonstrate two situations:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;weak references&lt;/strong&gt; : A &lt;code&gt;Vehicle&lt;/code&gt; can exist without a &lt;code&gt;User&lt;/code&gt;, and a &lt;code&gt;User&lt;/code&gt; can exist without a &lt;code&gt;Vehicle&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;unowned&lt;/strong&gt; : An &lt;code&gt;InsurancePolicy&lt;/code&gt; cannot exist without a &lt;code&gt;User&lt;/code&gt;, but a &lt;code&gt;User&lt;/code&gt; can exist without having any &lt;code&gt;InsurancePolicies&lt;/code&gt; (in fact, we set it up to start with none!).&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;But there exists a third scenario: &lt;em&gt;both&lt;/em&gt; properties always need to have a value and &lt;strong&gt;neither&lt;/strong&gt; property should ever be nil after initialization. It is in these situations that combining &lt;code&gt;unowned&lt;/code&gt; with an implicitly unwrapped optional is useful. It let&amp;rsquo;s us still access both properties directly once initialization is complete, without having to worry about optional unwrapping.&lt;/p&gt;
+
+&lt;p&gt;Consider the following scenario, where an Building requires a Landlord, and a Landlord must own a building (otherwise they aren&amp;rsquo;t much of a Landlord).&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;Building&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;landlord&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Landlord&lt;/span&gt;
+
+    &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;landlordName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;landlord&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Landlord&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;landlordName&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;building&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;Landlord&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+    &lt;span class="k"&gt;unowned&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;building&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Building&lt;/span&gt;
+    &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;building&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Building&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;name&lt;/span&gt;
+        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;building&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;building&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;The initializer for &lt;code&gt;Landlord&lt;/code&gt; is called from within the initializer for &lt;code&gt;Building.&lt;/code&gt; However, the initializer for &lt;code&gt;Building&lt;/code&gt; cannot pass &lt;code&gt;self&lt;/code&gt; to the &lt;code&gt;Landlord&lt;/code&gt; initializer until a new &lt;code&gt;Building&lt;/code&gt; instance has completed Phase-1 initialization.&lt;/p&gt;
+
+&lt;p&gt;In order to deal with this, we declare &lt;code&gt;landlord&lt;/code&gt; property of &lt;code&gt;Building&lt;/code&gt; as an implicitly unwrapped optional property. This means that &lt;code&gt;landlord&lt;/code&gt; has a default property value of &lt;code&gt;nil&lt;/code&gt;, but can be accessed without the need to unwrap its value. Since &lt;code&gt;landlord&lt;/code&gt; has a default value of &lt;code&gt;nil&lt;/code&gt;, phase-1 initialization is considered complete since all properties of &lt;code&gt;Building&lt;/code&gt; have been set, and now we&amp;rsquo;re able to reference &lt;code&gt;self&lt;/code&gt; and pass it into the initializer for &lt;code&gt;Landlord&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;Through this technique we&amp;rsquo;re able to create an instance of &lt;code&gt;Landlord&lt;/code&gt; and an instance of &lt;code&gt;Building&lt;/code&gt; all in a single statement without a strong reference cycle or having to unwrap an optional value.&lt;/p&gt;
+
+&lt;h3&gt;Parting Tip: Weak or Unowned?&lt;/h3&gt;
+
+&lt;p&gt;Here&amp;rsquo;s a quick tip to remember which modifier to use.&lt;/p&gt;
+
+&lt;p&gt;Can the referenced object ever be nil / can this object exist without this reference / can this object outlive the referenced object?&lt;/p&gt;
+
+&lt;p&gt;YES: &lt;strong&gt;weak&lt;/strong&gt; (zeroing)&lt;/p&gt;
+
+&lt;p&gt;NO: &lt;strong&gt;unowned&lt;/strong&gt; (non-zeroing)&lt;/p&gt;
+</content>
+  </entry>
+  <entry>
+    <title>MVVM</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2017/04/10/mvvm.html"/>
+    <id>http://blog.url.com/blog/2017/04/10/mvvm.html</id>
+    <published>2017-04-10T19:42:00-04:00</published>
+    <updated>2017-05-10T20:08:07-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;Another MVVM Post?&lt;/p&gt;
+
+&lt;p&gt;Yes, that&amp;rsquo;s right!&lt;/p&gt;
+
+&lt;p&gt;Cocoa frameworks owe their core architecture to the famous design pattern Model-View-Controller, or MVC. MVC is widely used throughout many programming disciplines, especially web development with Ruby on Rails or ASP.NET. For many, this pattern seems to work fine. However, over time many pragmatic developers have come to realize that MVC can often lead to bloated controllers (the old adage &amp;ldquo;&lt;strong&gt;M&lt;/strong&gt;assive &lt;strong&gt;V&lt;/strong&gt;iew &lt;strong&gt;C&lt;/strong&gt;ontroller references this) that contain too much of the presentation logic rather than interaction logic.&lt;/p&gt;
+
+&lt;p&gt;This is where MVVM, or Model-View-ViewModel steps up at bat. It&amp;rsquo;s gained a fair amount of traction in the Apple developer community in recent years. It shifts a good portion of the presentation logic over to objects called ViewModels. A simple concept that can have far-reaching benefits across a given codebase.&lt;/p&gt;
+
+&lt;h3&gt;The Model&lt;/h3&gt;
+
+&lt;p&gt;A Model&amp;rsquo;s responsibility is to represent state in an application.&lt;/p&gt;
+
+&lt;p&gt;The model object should:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Not contain or own any View/ViewModel/Controller types.&lt;/li&gt;
+&lt;li&gt;Not have member functions that take any of those types as parameters.&lt;/li&gt;
+&lt;li&gt;No import statements for those types.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3&gt;The ViewModel&lt;/h3&gt;
+
+&lt;p&gt;A ViewModel processes data from a Model for a View. Following the single responsibility principle, it&amp;rsquo;s job is to contain the &lt;strong&gt;view logic.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;One of the simplest examples is a formatting a User object for presentation.&lt;/p&gt;
+
+&lt;p&gt;Consider a simple User struct as our &lt;strong&gt;Model&lt;/strong&gt;:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;/// An individual user of the application.&lt;/span&gt;
+&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The given name of the user (first name).&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;givenName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The family name of the user (last name).&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;familyName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The birthdate of the user.&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;birthdate&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Date&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The points earned by the user.&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;points&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Let&amp;rsquo;s use a &lt;strong&gt;ViewModel&lt;/strong&gt; to encapsulate the view state. Unlike the model state, this view state is transient and often does not require persistence.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;/// Encapsulates the view logic for the User model.&lt;/span&gt;
+&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;UserViewModel&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The user object represented by this ViewModel.&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;User&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The user's full name.&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;fullName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;givenName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;familyName&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The formatted date string representing the user's birthdate.&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;formattedBirthdateString&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nf"&gt;type&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;of&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;birthdateFormatter&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;string&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;from&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;birthdate&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The formatted points strng of the user.&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;formattedPointsString&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;pointString&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;points&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;?&lt;/span&gt; &lt;span class="s"&gt;"point"&lt;/span&gt; &lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"points"&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;user&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;points&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt; &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;pointString&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+
+    &lt;span class="c1"&gt;/// The date formatter used to format the user's birthdate.&lt;/span&gt;
+    &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="kd"&gt;static&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;birthdateFormatter&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;DateFormatter&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;dateFormatter&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;DateFormatter&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+        &lt;span class="n"&gt;dateFormatter&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;dateFormat&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"MMM d, yyyy"&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;dateFormatter&lt;/span&gt;
+    &lt;span class="p"&gt;}()&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can now use this ViewModel as a property in a &lt;strong&gt;controller&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;h3&gt;Controller&lt;/h3&gt;
+
+&lt;p&gt;Controllers are responsible for managing the interaction of components.&lt;/p&gt;
+
+&lt;p&gt;Let&amp;rsquo;s take for instance, a &lt;strong&gt;UserProfileViewController&lt;/strong&gt; that displays some information about a user. We can now just provide the view controller with a ViewModel in order to display the data. The Controller depends on the ViewModel in order to function. By including the viewModel in the initializer, we instantiate the controller with it&amp;rsquo;s dependency. This is &lt;strong&gt;dependency injection&lt;/strong&gt;.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;vc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;UserProfileViewController&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;nibName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"UserProfileViewController"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; 
+                                   &lt;span class="nv"&gt;bundle&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; 
+                                   &lt;span class="nv"&gt;viewModel&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;userViewModel&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;UserProfileViewController&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;UIViewController&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="c1"&gt;/// The view model for the user. Setting this value will update the data displayed in the view.&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;viewModel&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;UserViewModel&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;didSet&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="n"&gt;userLabel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;viewModel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;fullName&lt;/span&gt;
+            &lt;span class="n"&gt;birthdateLabel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;viewModel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;formattedBirthdateString&lt;/span&gt;
+            &lt;span class="n"&gt;pointsLabel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;text&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;viewModel&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;formattedPointsString&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we have a single property that can shuttle the model&amp;rsquo;s presentation logic right into our view any time it is set.&lt;/p&gt;
+
+&lt;p&gt;This becomes more powerful when you consider the use cases for table views and collection views.&lt;/p&gt;
+
+&lt;h3&gt;Bonus: Testability&lt;/h3&gt;
+
+&lt;p&gt;Another added benefit to dependency injection is allowing each type to have a single responsibility that can easily be unit tested:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;testUser&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;mockUser&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;MockUser&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;givenName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;...&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;viewModel&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;UserViewModel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;user&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;mockUser&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;vc&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;UserProfileViewController&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;nibName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"UserProfileViewController"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; 
+                                       &lt;span class="nv"&gt;bundle&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; 
+                                       &lt;span class="nv"&gt;viewModel&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;viewModel&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="c1"&gt;// Do tests here                                 &lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;As you can see, MVVM can offer much more than plain MVC. Adhering to the single responsibility principle allows for cleaner code that&amp;rsquo;s easier to debug and test. Code that is easier to test is code that&amp;rsquo;s easier to change - and as Alan Deutschman says, &amp;quot;Change or Die.&amp;rdquo;&lt;/p&gt;
+
+&lt;p&gt;Well, maybe not that dramatic, but you get the point. &lt;img class="gemoji" alt="smile" src="https://assets-cdn.github.com/images/icons/emoji/unicode/1f604.png" width="20" height="20" style="margin-bottom: 4px" /&gt;&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>SwiftNetworking</title>
     <link rel="alternate" href="http://blog.url.com/blog/2017/04/05/swiftnetworking.html"/>
@@ -142,198 +609,6 @@
 &lt;p&gt;I also set out to add a better meme preview than the default one that was being displayed from the Memed image being saved in the meme model. I decided on creating a custom UITableViewCell as well, adding the top meme text, bottom meme text, and original image to re-create a preview that could fit within a square. I created a similar UICollectionViewCell for the same purposes, this way each preview looked uniform and cohesive.&lt;/p&gt;
 
 &lt;p&gt;With some minor adjustments, I was able to exceed the criteria for the Udacity rubric. Adding the ability to select custom fonts and the capability to re-render the meme to fit inside of a preview square (in the table and collection views) was definitely worth the effort.&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>Pitch Perfect Completed</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2015/03/24/pitch.html"/>
-    <id>http://blog.url.com/blog/2015/03/24/pitch.html</id>
-    <published>2015-03-23T20:55:00-04:00</published>
-    <updated>2016-07-19T14:05:02-04:00</updated>
-    <author>
-      <name>Article Author</name>
-    </author>
-    <content type="html">&lt;p&gt;I finished the Udacity Pitch Perfect app over the weekend and submitted it for approval on Monday afternoon. I got a response back pretty quickly&amp;hellip;all but a few minor issues had to be resolved.&lt;/p&gt;
-
-&lt;p&gt;One issue/recommendation was to use the extract method pattern to extract out the method that stopped the audio and reset the audio engine. This was relatively simple and more so an oversight of my own.&lt;/p&gt;
-
-&lt;p&gt;Next I started to move on to a quick review of Swift basics. I wanted to refresh myself with another perspective on Structs, Enumerations, and the like. Before that though, I wanted to really hammer-in the concept of Optionals.
-For example, the following code is not allowed:&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt;
-&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;This is because Swift disallows nil values in all types, except Optionals. We can make this code allowable by declaring z as an Optional Int:&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;z&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt;
-&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;nil&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;And now we&amp;rsquo;re good to go. Optional Chaining is great way to safely unwrap optionals, especially when combined with optional binding (if let statements). Here&amp;rsquo;s an example of plain optional binding: &lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;image&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;imageView&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;image&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;size&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;image&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt;
-    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"image size: &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Image not set."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;If we used optional chaining with optional binding, we get a more succinct piece of code:&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;imageSize&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;imageView&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;image&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;size&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"image size: &lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;imageSize&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"Image not set."&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The bang (!) you see has two different meanings depending on where it is used.&lt;/p&gt;
-
-&lt;p&gt;In declarations, it works to declare an implicitly unwrapped optional. This will automatically unwrap the optional for us when we use it, and can throw a fatal error if called upon when nil. We often see this used for IBOutlets, because they are nil until the ViewDidLoad() method is called. However, this lets us use them in our functions without having to ever unwrap them again. In this case, we can deduce that there are two reasons to use an implicitly unwrapped optional:&lt;/p&gt;
-
-&lt;p&gt;When the value of the object needs to be nil upon creation
-&amp;amp; When we can guarantee they won&amp;rsquo;t be nil when we need to use them&lt;/p&gt;
-
-&lt;p&gt;In expressions, using a ! will result in a force unwrap. A force unwrap is telling the application that you know for certain that the optional is not containing nil. In order to do this, you must be extremely certain that the optional will not contain nil when called upon, otherwise a fatal error will occur.&lt;/p&gt;
-
-&lt;p&gt;Here are some examples of when to use the bang (!):&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Example 1&lt;/span&gt;
-&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;w&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"123"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;
-&lt;span class="n"&gt;w&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;
-
-&lt;span class="c1"&gt;// Example 2&lt;/span&gt;
-&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;BetterViewController&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="kt"&gt;UIViewController&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;myButton&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;UIButton&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt; 
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Another way to use the optional operators ? and ! are for downcasting, when you are using the variable as a subclass of what it is currently set as, such as downcasting an NSString to a String.&lt;/p&gt;
-
-&lt;p&gt;Next up was functions review, and it was important to note that functions in Objective-C and Swift use prepositions in their function names to refer to the first parameter, such as firstCharacterOf(word: String), and so on.&lt;/p&gt;
-
-&lt;p&gt;Swift entity scope was also important to note. Swift uses three access control levels: public, internal, and private. Internal is often used, and it&amp;rsquo;s access level is within Classes and the App/Framework, but it is not Global.&lt;/p&gt;
-
-&lt;p&gt;Dealing with scopes, it&amp;rsquo;s also important to know that type/class properties are constants for the entire class. Computed properties use custom getter/setter methods.&lt;/p&gt;
-
-&lt;p&gt;Class functions/properties are available to all subclasses, and static functions/properties are only available to the main (parent) class.&lt;/p&gt;
-
-&lt;p&gt;Enumerations define a set of related values, and Structs are a convenient way to bundle properties together. Both can have their own methods, and both can conform to protocols. Enums use the case structure:&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;enum&lt;/span&gt; &lt;span class="kt"&gt;PrimaryColor&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="n"&gt;red&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;blue&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;yellow&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-
-&lt;span class="kd"&gt;enum&lt;/span&gt; &lt;span class="kt"&gt;AmericanLeagueWest&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="kt"&gt;As&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"Oakland"&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="kt"&gt;Astros&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"Houston"&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="kt"&gt;Angels&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"Los Angeles"&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="kt"&gt;Mariners&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"Seattle"&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;You can access the enumerations raw value such as AmericanLeagueWest.Astros.rawValue&lt;/p&gt;
-
-&lt;p&gt;Structs get memberwise initializers automatically. Classes are references types, but structs and enums are value types (they get copied on every assignment). Also, only classes have inheritance!&lt;/p&gt;
-
-&lt;p&gt;Here are some examples of enums, classes, and structs:&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;Triangle&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;angles&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;30&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;60&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;90&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;sides&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;4&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;5&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-
-&lt;span class="kd"&gt;enum&lt;/span&gt; &lt;span class="kt"&gt;Subject&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="kt"&gt;Math&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="kt"&gt;Science&lt;/span&gt;
-    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="kt"&gt;English&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-
-&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;Student&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;grades&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Double&lt;/span&gt;&lt;span class="p"&gt;]()&lt;/span&gt;
-    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Name&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;firstName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Grace"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;lastName&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Hooper"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-    &lt;span class="o"&gt;...&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;The last bit of Swift basics touched on Protocols, Extensions, and Closures.&lt;/p&gt;
-
-&lt;p&gt;Protocols are shared among classes, and extensions are used to customize exisitng classes.&lt;/p&gt;
-
-&lt;p&gt;Protocol is a list of related method signatures. Adopting a protocol is like signing a contract to implement every method on that list. It&amp;rsquo;s an essential component to the delegate pattern.&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// Equatable Protocol&lt;/span&gt;
-&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;lhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="k"&gt;Self&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;rhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="k"&gt;Self&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt;
-
-&lt;span class="c1"&gt;// Implementation:&lt;/span&gt;
-&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;lhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Roommate&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;rhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Roommate&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;hungry&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;hungry&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-
-&lt;span class="c1"&gt;// Test:&lt;/span&gt;
-&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;roommate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Roommate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;hungry&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Alex"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;otherRoommate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;Roommate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;hungry&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Alex"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-
-&lt;span class="n"&gt;roommate&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;otherRoommate&lt;/span&gt; &lt;span class="c1"&gt;// true&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;A protocol is also a type. You can use protocol names where you would use any other type name. This basically means you specify that &amp;ldquo;I don&amp;rsquo;t care what type of object you pass into the property/function, as long as they adhere to protocol X&amp;rdquo;&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;DinnerCrew&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;members&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Souschef&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-    &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;members&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Souschef&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-        &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;members&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;members&lt;/span&gt;
-    &lt;span class="p"&gt;}&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Extensions can add new functionality to a type, but they cannot override existing functionality. You can use extensions to extend properties, methods, or even protocols. You can even add new initializers to existing types through extensions.&lt;/p&gt;
-
-&lt;p&gt;Finally, Closures in Swift include global functions, nested functions, and closure expressions. Closure expressions are unnamed, self-contained blocks of code that can be passed to a function.&lt;/p&gt;
-
-&lt;p&gt;Example:&lt;/p&gt;
-
-&lt;p&gt;sort() is part of the swift standard library. It is part of the SequenceType protocol. It takes one argument: a closure expression about how items in the collection should be ordered.
-Syntax:&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="p"&gt;{(&lt;/span&gt;&lt;span class="n"&gt;parameter&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;returnType&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
-    &lt;span class="n"&gt;statements&lt;/span&gt; &lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="n"&gt;execute&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Example in use:&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;bids&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;48&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;75&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;63&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;68&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;orderedBids&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;bids&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;sort&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt; &lt;span class="nv"&gt;bid1&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;bid2&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
-    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;bid2&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;bid1&lt;/span&gt;
-&lt;span class="p"&gt;})&lt;/span&gt;
-&lt;span class="nf"&gt;print&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;orderedBids&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="err"&gt;#&lt;/span&gt;&lt;span class="o"&gt;=&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="mi"&gt;48&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;52&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;63&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;68&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;75&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-
-&lt;span class="c1"&gt;// Briefer syntax:&lt;/span&gt;
-
-&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;orderedBidsBrief&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;bids&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;sort&lt;/span&gt;&lt;span class="p"&gt;({&lt;/span&gt;
-    &lt;span class="nv"&gt;$1&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="nv"&gt;$0&lt;/span&gt;
-&lt;span class="p"&gt;})&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-</content>
-  </entry>
-  <entry>
-    <title>Pitch Perfect 2</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2015/03/17/pitch-perfect-2.html"/>
-    <id>http://blog.url.com/blog/2015/03/17/pitch-perfect-2.html</id>
-    <published>2015-03-16T20:32:00-04:00</published>
-    <updated>2016-07-19T14:04:54-04:00</updated>
-    <author>
-      <name>Article Author</name>
-    </author>
-    <content type="html">&lt;p&gt;I finished the majority of the Pitch Perfect app today on Udacity. The projected finish date was supposed to be April 18th, but it&amp;rsquo;s only March 18th now so it looks like I am nearly a month ahead of schedule!&lt;/p&gt;
-
-&lt;p&gt;In the last portion of the project I had to figure out a good portion of stuff. Here is a recap of what I&amp;rsquo;ve covered:&lt;/p&gt;
-
-&lt;p&gt;Delegates
-It was interesting to get a good analogy about how delegates work. The boss to employee analogy drew a good parallel. The &amp;ldquo;boss&amp;rdquo; in this situation is AVAudioRecorder. AVAudioRecorder knows: how to record audio, when the recording is done, and has access to the function audioRecorderDidFinishRecording. The &amp;ldquo;employee&amp;rdquo; is RecordSoundsViewController
-Therefore, we need to enable this delegate in our RecordSoundsViewController class. This was accomplished in two steps:
-Add AVAudioRecorderDelegate to the class inheritance
-add audioRecorder.delegate = self
-Now we have access to the function audioRecorderDidFinishRecording.
-Behind the scenes, AVAudioRecorder is a class with a delegate property of type AVAudioReocrderDelegate! (which is just a protocol)
-The protocol AVAudioRecorderDelegate contains the function we want to use.
-Therefore by doing audioRecorder.delegate = self, we allow our ViewController to access the methods in the protocol.
-Save audio using AVAudioRecorder
-Record data / model
-Pass data from one ViewController to another (pass data between segues)
-Almost done with the app, I&amp;rsquo;ll update once I&amp;rsquo;ve finished the entire rubric!&lt;/p&gt;
 </content>
   </entry>
 </feed>
