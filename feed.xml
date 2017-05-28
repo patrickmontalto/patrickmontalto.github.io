@@ -5,10 +5,185 @@
   <id>http://blog.url.com/blog</id>
   <link href="http://blog.url.com/blog"/>
   <link href="http://blog.url.com/feed.xml" rel="self"/>
-  <updated>2017-05-10T20:11:00-04:00</updated>
+  <updated>2017-05-28T01:05:00-04:00</updated>
   <author>
     <name>Blog Author</name>
   </author>
+  <entry>
+    <title>Swift Networking Operations</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2017/05/28/swift-networking-operations.html"/>
+    <id>http://blog.url.com/blog/2017/05/28/swift-networking-operations.html</id>
+    <published>2017-05-28T01:05:00-04:00</published>
+    <updated>2017-05-28T01:15:56-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;Most apps need networking. Luckily, Apple gave us &lt;code&gt;URLSession&lt;/code&gt;!
+But hold off a minute, where’s all this network code supposed to go? Making the requests, parsing all that data…&lt;/p&gt;
+
+&lt;h1&gt;The Architecture&lt;/h1&gt;
+
+&lt;p&gt;Unless you have some significant reason to, it’s typically best to &lt;strong&gt;avoid network code in your ViewControllers&lt;/strong&gt;. No one likes when they get &lt;em&gt;really big&lt;/em&gt;, and they start making a bunch of jokes how the M in MVC stands for…well, you probably know by now. It violates the &lt;code&gt;Single Responsibility Principle&lt;/code&gt; and all that jazz, so let’s not do that.&lt;/p&gt;
+
+&lt;h2&gt;Use the Queue&lt;/h2&gt;
+
+&lt;p&gt;We can leverage &lt;code&gt;Operation&lt;/code&gt; and &lt;code&gt;OperationQueue&lt;/code&gt; to isolate the networking code, allowing us to think of both the network request and the parsing of the response as one operation/task executed together. We can encapsulate this right in an &lt;code&gt;Operation&lt;/code&gt; subclass. &lt;code&gt;OperationQueue&lt;/code&gt; offers us some interesting benefits, such as also being able to cancel the queue (such as when a user signs out), pause the queue (if the client loses internet connectivity), or prioritize different operations within the &lt;code&gt;OperationQueue&lt;/code&gt; (user initiated &amp;gt; application initiated). &lt;/p&gt;
+
+&lt;p&gt;The typical flow for subclassing &lt;code&gt;Operation&lt;/code&gt; involves overriding the &lt;code&gt;main&lt;/code&gt; method and performing work in there. In this case, we will override the &lt;code&gt;start&lt;/code&gt; method and manually control &lt;code&gt;Operation&lt;/code&gt; state machine to control it’s state of execution. This is because &lt;code&gt;URLSession&lt;/code&gt; will push the actual network request onto a background thread, which if we had used the &lt;code&gt;main&lt;/code&gt; method, would cause or &lt;code&gt;Operation&lt;/code&gt; subclass to finish. This is because the queue would think it’s work had finished. &lt;/p&gt;
+
+&lt;p&gt;Let’s start by making an abstract &lt;code&gt;AsyncOperation&lt;/code&gt; class, a subclass of &lt;code&gt;Operation&lt;/code&gt;. In here, we’ll need to override 4 properties and 2 functions.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;isReady&lt;/strong&gt; - indicates our &lt;code&gt;Operation&lt;/code&gt; subclass is ready to be executed.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;isExecuting&lt;/strong&gt; - indicates our &lt;code&gt;Operation&lt;/code&gt; subclass is currently doing work.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;isFinished&lt;/strong&gt; - indicates that our &lt;code&gt;Operation&lt;/code&gt; subclass has completed the task and should be removed from the &lt;code&gt;OperationQueue&lt;/code&gt;. &lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;isAsynchronous -&lt;/strong&gt; indicates whether or not this operation will be serial or async.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;To manage the states, we can create an enum called &lt;code&gt;State&lt;/code&gt;. We can then hold the &lt;code&gt;Operation&lt;/code&gt;’s current state with a variable of type &lt;code&gt;State&lt;/code&gt;. &lt;/p&gt;
+
+&lt;p&gt;We will add property observers &lt;code&gt;willSet&lt;/code&gt; and &lt;code&gt;didSet&lt;/code&gt; in order to monitor changes in the state. In response to changes in state, we trigger KVO notifications for the superclass &lt;code&gt;Operation&lt;/code&gt; state variables (the &lt;code&gt;isReady&lt;/code&gt;, &lt;code&gt;isExecuting&lt;/code&gt;, and &lt;code&gt;isFinished&lt;/code&gt; variables, which we’re overriding).&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;AsyncOperation&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Operation&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="c1"&gt;// MARK: - State&lt;/span&gt;
+  &lt;span class="kd"&gt;enum&lt;/span&gt; &lt;span class="kt"&gt;State&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;case&lt;/span&gt; &lt;span class="n"&gt;ready&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;executing&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;finished&lt;/span&gt;
+
+    &lt;span class="n"&gt;fileprivate&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;keyPath&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+      &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="s"&gt;"is"&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;rawValue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;capitalized&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// Default initial state is ready&lt;/span&gt;
+  &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;state&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;State&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ready&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;willSet&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+      &lt;span class="nf"&gt;willChangeValue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;forKey&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;newValue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keyPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="nf"&gt;willChangeValue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;forKey&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keyPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;didSet&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+      &lt;span class="nf"&gt;didChangeValue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;forKey&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;oldValue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keyPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="nf"&gt;didChangeValue&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;forKey&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;keyPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// MARK: - Operation Overrides&lt;/span&gt;
+  &lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;isReady&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;super&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;isReady&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;ready&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+
+  &lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;isExecuting&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;executing&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+
+  &lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;isFinished&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finished&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+
+  &lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;isAsynchronous&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Next, we’ll override the &lt;code&gt;start&lt;/code&gt; method and &lt;code&gt;cancel&lt;/code&gt; methods, to further manage the state.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// MARK: - Start&lt;/span&gt;
+&lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;start&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;isCancelled&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finished&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// Execute the main function of the Operation&lt;/span&gt;
+  &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;executing&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="c1"&gt;// MARK: - Cancel&lt;/span&gt;
+&lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;cancel&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="k"&gt;super&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;cancel&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finished&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Note: cancelling the &lt;code&gt;Operation&lt;/code&gt; while it’s in the &lt;code&gt;OperationQueue&lt;/code&gt;  but before it executes makes it possible to remove the operation from the queue sooner than usual.&lt;/p&gt;
+
+&lt;p&gt;Now with our &lt;code&gt;AsyncOperation&lt;/code&gt; abstract &lt;code&gt;Operation&lt;/code&gt; subclass, let’s imagine an application where we will have to get &lt;code&gt;Posts&lt;/code&gt; from an API. Let’s implement a &lt;code&gt;QueryOperation&lt;/code&gt; class, a subclass of our abstract &lt;code&gt;AsyncOperation&lt;/code&gt;. &lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;typealias&lt;/span&gt; &lt;span class="kt"&gt;JSONDictionary&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Any&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;span class="kd"&gt;typealias&lt;/span&gt; &lt;span class="kt"&gt;QueryResult&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;([&lt;/span&gt;&lt;span class="kt"&gt;Post&lt;/span&gt;&lt;span class="p"&gt;]?,&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="p"&gt;()&lt;/span&gt;
+
+&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;QueryOperation&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;AsyncOperation&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;defaultSession&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;URLSession&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;configuration&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="k"&gt;default&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+  &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;task&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;URLSessionDataTask&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt;
+  &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;url&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;URL&lt;/span&gt;
+  &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;completion&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;QueryResult&lt;/span&gt;
+  &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;errorMessage&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;""&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// MARK: - Initializer&lt;/span&gt;
+  &lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;url&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;URL&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;completion&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kd"&gt;@escaping&lt;/span&gt; &lt;span class="kt"&gt;QueryResult&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;
+    &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;completion&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;completion&lt;/span&gt;
+    &lt;span class="k"&gt;super&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;init&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// MARK: - Main&lt;/span&gt;
+  &lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;main&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="n"&gt;task&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;defaultSession&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;dataTask&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;with&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+      &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;posts&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Posts&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[]&lt;/span&gt;
+
+      &lt;span class="c1"&gt;// Check for error&lt;/span&gt;
+      &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;error&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="n"&gt;errorMessage&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;localizedDescription&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;data&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;response&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;response&lt;/span&gt; &lt;span class="k"&gt;as?&lt;/span&gt; &lt;span class="kt"&gt;HTTPURLResponse&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+        &lt;span class="n"&gt;response&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;statusCode&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="mi"&gt;200&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+          &lt;span class="c1"&gt;// Success. Parse the data and call the completion handler&lt;/span&gt;
+          &lt;span class="n"&gt;posts&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;PostParser&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;parse&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;data&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt;
+
+      &lt;span class="nf"&gt;completion&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;posts&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;errorMessage&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+      &lt;span class="k"&gt;self&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;state&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;finished&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="n"&gt;task&lt;/span&gt;&lt;span class="p"&gt;?&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;resume&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2&gt;Managing it All (or some of it)&lt;/h2&gt;
+
+&lt;p&gt;This &lt;code&gt;QueryOperation&lt;/code&gt; class contains the logic necessary for actually building the &lt;code&gt;URLSessionDataTask&lt;/code&gt; and parsing the &lt;code&gt;data&lt;/code&gt;. Encapsulating these two into one class removes the burden from what will be the last piece to the puzzle, an &lt;code&gt;APIManager&lt;/code&gt; class. We don’t want our ViewControllers to have access to an &lt;code&gt;OperationQueue&lt;/code&gt; to schedule these network requests. We need &lt;code&gt;APIManager&lt;/code&gt; to server as a dedicated class that is responsible for creating and scheduling our network requests. &lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;class&lt;/span&gt; &lt;span class="kt"&gt;APIManager&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+  &lt;span class="c1"&gt;// MARK: - Properties&lt;/span&gt;
+  &lt;span class="kd"&gt;private&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;queue&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;OperationQueue&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+  &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;downloadsSession&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;URLSession&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;
+
+  &lt;span class="c1"&gt;// MARK: - Actions&lt;/span&gt;
+  &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;getSearchResults&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;searchString&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;completion&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kd"&gt;@escaping&lt;/span&gt; &lt;span class="kt"&gt;QueryResult&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="c1"&gt;// Cancel all operations on the OperationQueue&lt;/span&gt;
+    &lt;span class="n"&gt;queue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;cancelAllOperations&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+
+    &lt;span class="c1"&gt;// Create the QueryOperation for this request&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;url&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;URLComponents&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;string&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;https&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="c1"&gt;//myapi.com/search") {&lt;/span&gt;
+      &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;query&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="s"&gt;"term=&lt;/span&gt;&lt;span class="se"&gt;\(&lt;/span&gt;&lt;span class="n"&gt;searchString&lt;/span&gt;&lt;span class="se"&gt;)&lt;/span&gt;&lt;span class="s"&gt;"&lt;/span&gt;
+      &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;operation&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;QueryOperation&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;url&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;url&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="n"&gt;tracks&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt; &lt;span class="k"&gt;in&lt;/span&gt;
+        &lt;span class="kt"&gt;DispatchQueue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;main&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="k"&gt;as&lt;/span&gt;&lt;span class="n"&gt;ync&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+          &lt;span class="nf"&gt;completion&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;tracks&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;error&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+      &lt;span class="p"&gt;}&lt;/span&gt;
+      &lt;span class="c1"&gt;// Add the operation to the queue&lt;/span&gt;
+      &lt;span class="n"&gt;queue&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;addOperation&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;operation&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+  &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now when a ViewController requires Network code, it can utilize &lt;code&gt;APIManager&lt;/code&gt; to initiate a &lt;code&gt;QueryOperation&lt;/code&gt; for that particular request. It will schedule the operation to be executed on the &lt;code&gt;OperationQueue&lt;/code&gt; and allow the ViewController to retrieve the results via a provided escaping closure.&lt;/p&gt;
+
+&lt;p&gt;&lt;img alt="networking_diagram" src="/images/network_op.png" /&gt;&lt;/p&gt;
+
+&lt;h2&gt;We Did It!&lt;/h2&gt;
+
+&lt;p&gt;There’s always more room for improvement as needed, such as creating a class that can managed the &lt;code&gt;APIManager&lt;/code&gt;&amp;rsquo;s queues as well. For simple use cases, this is a great starting point. We’ve prevented (or removed) networking code from our view controller and encapsulated it in two separate objects: &lt;code&gt;APIManager&lt;/code&gt; responsible for enqueueing and executing operations, and the &lt;code&gt;QueryOperation&lt;/code&gt; itself being what builds the task (such as&lt;code&gt;URLSessionDataTask&lt;/code&gt;), parsing the data, and having the parsed data or error message bubble back up to the requesting View Controller that initiated this whole process. From there, the ViewController can update the UI accordingly and do it’s job without getting bogged down with network code.&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>iOS Memory Management</title>
     <link rel="alternate" href="http://blog.url.com/blog/2017/05/11/ios-memory-management.html"/>
@@ -559,56 +734,6 @@
 &lt;p&gt;Thanks!&lt;/p&gt;
 
 &lt;p&gt;&lt;img title="Ruby Dojo Icon" alt="logo" src="http://a4.mzstatic.com/us/r30/Purple60/v4/48/79/77/487977f4-e31e-a13f-5f11-2bddfb49cda6/icon175x175.png" /&gt;&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>UICollectionViews &amp; More</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2015/04/18/swift-_uicollectionviews_and_more.html"/>
-    <id>http://blog.url.com/blog/2015/04/18/swift-_uicollectionviews_and_more.html</id>
-    <published>2015-04-18T19:15:00-04:00</published>
-    <updated>2016-07-19T14:05:00-04:00</updated>
-    <author>
-      <name>Article Author</name>
-    </author>
-    <content type="html">&lt;p&gt;I&amp;rsquo;ve recently started working with collection views, and it&amp;rsquo;s been a relatively simple process (minus fiddling around with the layout).&lt;/p&gt;
-
-&lt;p&gt;I&amp;rsquo;ve been working with table views for a good few months now in my spare time and felt pretty comfortable with the methods of the UITableView DataSource and Delegate protocols. It was a natural transition to start learning the methods of CollectionView delegates and data sources as well.&lt;/p&gt;
-
-&lt;p&gt;I applied my learning to a Meme generator app, called MemeMe. The app presents a TableView and a CollectionView which show memes created using the application. The user can select whether they want to see their memes in a table view or a collection view by tapping the appropriate icon on the tab bar.&lt;/p&gt;
-
-&lt;p&gt;I implemented a separate NavigationController for the table view and collection view, and connected both via a TabBarController.&lt;/p&gt;
-
-&lt;p&gt;Tapping on a meme in the table view opens up a custom view controller, MemeDetailViewController. Within the 
-&lt;code&gt;tableView(_:didSelectRowAtIndexPath:)&lt;/code&gt; method, the navigation controller pushes the detail view ontop of the navigation stack and passes the specific meme to the detail view.&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;tableView&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;tableView&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;UITableView&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;didSelectRowAtIndexPath&lt;/span&gt; &lt;span class="nv"&gt;indexPath&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;NSIndexPath&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-  &lt;span class="c1"&gt;// present meme detail view controller &lt;/span&gt;
-  &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;detailController&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;storyboard&lt;/span&gt;&lt;span class="o"&gt;!.&lt;/span&gt;&lt;span class="nf"&gt;instantiateViewControllerWithIdentifier&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="s"&gt;"MemeDetailViewController"&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="k"&gt;as!&lt;/span&gt; &lt;span class="kt"&gt;MemeDetailViewController&lt;/span&gt;
-  &lt;span class="n"&gt;detailController&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;meme&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;memes&lt;/span&gt;&lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="n"&gt;indexPath&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;row&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
-  &lt;span class="n"&gt;navigationController&lt;/span&gt;&lt;span class="o"&gt;!.&lt;/span&gt;&lt;span class="nf"&gt;pushViewController&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;detailController&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;animated&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Data was shared between the MemeEditorViewController, TableViewController, and UICollectionViewController by using a shared model.&lt;/p&gt;
-
-&lt;p&gt;The shared model for this particular application is &lt;code&gt;memes&lt;/code&gt;. They sit within the AppDelegate. Although sometimes controversial, I add the Meme model to the AppDelegate since it’s the simplest place to put it. XCodes coredata templates do this also, so there&amp;rsquo;s good precedence. &lt;/p&gt;
-
-&lt;p&gt;From there, each view loads the Meme shared model and interacts with it to present and in the case of UITableView, also destroy the data.&lt;/p&gt;
-&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="c1"&gt;// AppDelegate&lt;/span&gt;
-&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;memes&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Meme&lt;/span&gt;&lt;span class="p"&gt;]()&lt;/span&gt;
-
-&lt;span class="c1"&gt;// UITableView &amp;amp; UICollectionView&lt;/span&gt;
-&lt;span class="k"&gt;override&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;viewDidAppear&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;animated&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
-    &lt;span class="k"&gt;super&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;viewDidAppear&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
-
-    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;object&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;UIApplication&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;sharedApplication&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;delegate&lt;/span&gt;
-    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;appDelegate&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;object&lt;/span&gt; &lt;span class="k"&gt;as!&lt;/span&gt; &lt;span class="kt"&gt;AppDelegate&lt;/span&gt;
-    &lt;span class="n"&gt;memes&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;appDelegate&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;memes&lt;/span&gt;
-&lt;span class="p"&gt;}&lt;/span&gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;I also set out to add a better meme preview than the default one that was being displayed from the Memed image being saved in the meme model. I decided on creating a custom UITableViewCell as well, adding the top meme text, bottom meme text, and original image to re-create a preview that could fit within a square. I created a similar UICollectionViewCell for the same purposes, this way each preview looked uniform and cohesive.&lt;/p&gt;
-
-&lt;p&gt;With some minor adjustments, I was able to exceed the criteria for the Udacity rubric. Adding the ability to select custom fonts and the capability to re-render the meme to fit inside of a preview square (in the table and collection views) was definitely worth the effort.&lt;/p&gt;
 </content>
   </entry>
 </feed>

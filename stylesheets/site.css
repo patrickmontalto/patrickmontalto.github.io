@@ -3281,11 +3281,16 @@ article {
   margin-bottom: 50px; }
 
 /* line 177, site.css.scss */
+article p img {
+  display: block;
+  margin: auto; }
+
+/* line 181, site.css.scss */
 footer {
   clear: right;
   margin-top: 50pt; }
 
-/* line 181, site.css.scss */
+/* line 185, site.css.scss */
 footer p, footer p > a {
   font-family: 'futura-pt' -apple-system, Helvetica, Arial, sans-serif;
   font-size: 10pt;
