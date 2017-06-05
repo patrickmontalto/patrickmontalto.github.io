@@ -5,10 +5,165 @@
   <id>http://blog.url.com/blog</id>
   <link href="http://blog.url.com/blog"/>
   <link href="http://blog.url.com/feed.xml" rel="self"/>
-  <updated>2017-05-28T01:05:00-04:00</updated>
+  <updated>2017-06-05T17:18:00-04:00</updated>
   <author>
     <name>Blog Author</name>
   </author>
+  <entry>
+    <title>Generic Protocols</title>
+    <link rel="alternate" href="http://blog.url.com/blog/2017/06/05/generic-protocols.html"/>
+    <id>http://blog.url.com/blog/2017/06/05/generic-protocols.html</id>
+    <published>2017-06-05T17:18:00-04:00</published>
+    <updated>2017-06-05T17:40:43-04:00</updated>
+    <author>
+      <name>Article Author</name>
+    </author>
+    <content type="html">&lt;p&gt;&amp;ldquo;protocol ‘Xyz’ can only be used as a generic constraint because it has Self or associated type requirements”&lt;/p&gt;
+
+&lt;p&gt;If you’ve seen that before and been frustrated, it’s OK. Today, we’re going to talk about what’s causing this and an example on how to get around it.&lt;/p&gt;
+
+&lt;p&gt;There exist two protocol use cases. The first being &lt;em&gt;Heterogeneous (Existential Types)&lt;/em&gt;, and the second being &lt;em&gt;Homogeneous (Generic Constraints)&lt;/em&gt;. &lt;/p&gt;
+
+&lt;p&gt;Let’s consider the first: Existential Type. 
+Say we have a &lt;code&gt;Weapon&lt;/code&gt; protocol:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;protocol&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;reforged&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="k"&gt;Self&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Not a very exciting protocol, but let’s implement a generic function that is constrained to the &lt;code&gt;Weapon&lt;/code&gt; protocol.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;enhance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt; &lt;span class="nv"&gt;weapon&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;T&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;T&lt;/span&gt; &lt;span class="k"&gt;where&lt;/span&gt; &lt;span class="kt"&gt;T&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;weapon&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;reforged&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;We can create a &lt;code&gt;Sword&lt;/code&gt; struct that adheres to this &lt;code&gt;Weapon&lt;/code&gt; protocol:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kd"&gt;private(set)&lt;/span&gt; &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;isReforged&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;reforged&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;isReforged&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kc"&gt;true&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Now we can call &lt;code&gt;enhance(_:)&lt;/code&gt;on a &lt;code&gt;Sword&lt;/code&gt; to get a reforged &lt;code&gt;Sword&lt;/code&gt; instance.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;enhancedSword&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nf"&gt;enhance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;())&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Rewritten as follows, we’ve made &lt;code&gt;enhance(_ :)&lt;/code&gt;  a &lt;em&gt;Heterogeneous&lt;/em&gt; function using &lt;em&gt;Existential Types&lt;/em&gt;. When this occurs, we can pass &lt;strong&gt;any&lt;/strong&gt; object that conforms to the &lt;code&gt;Weapon&lt;/code&gt; protocol and return &lt;strong&gt;any&lt;/strong&gt; other object that also conforms to the &lt;code&gt;Weapon&lt;/code&gt; protocol. They may &lt;strong&gt;not&lt;/strong&gt; necessarily be the same type!&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;enhance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt; &lt;span class="nv"&gt;weapon&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;T&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;weapon&lt;/span&gt; &lt;span class="k"&gt;is&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; 
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;Hammer&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt; 
+    &lt;span class="p"&gt;}&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Here, we’re able to return a &lt;code&gt;Hammer&lt;/code&gt; type from the &lt;code&gt;enhance(_:)&lt;/code&gt; function even when we provide it with a &lt;code&gt;Sword&lt;/code&gt; instance.&lt;/p&gt;
+
+&lt;p&gt;Now, if we were to rewrite &lt;code&gt;enhance(_:)&lt;/code&gt; to the following, we’d be using &lt;em&gt;Generic Constraints (Homogeneous)&lt;/em&gt;:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;enhance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_&lt;/span&gt; &lt;span class="nv"&gt;weapon&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;T&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;T&lt;/span&gt; &lt;span class="k"&gt;where&lt;/span&gt; &lt;span class="kt"&gt;T&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;weapon&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;reforged&lt;/span&gt;&lt;span class="p"&gt;()&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In this case, the generic parameter is &lt;strong&gt;always&lt;/strong&gt; the same type T, it just happens to be constrained to have to adhere to the &lt;code&gt;Weapon&lt;/code&gt; protocol as well. Therefore, whatever type we provide to T is the same type we will get out.&lt;/p&gt;
+
+&lt;p&gt;Let’s now create a collection of container for a collection of &lt;code&gt;Weapons&lt;/code&gt;. We will call it &lt;code&gt;WeaponCache&lt;/code&gt;. Our goal is to be able to make &lt;code&gt;WeaponCache&lt;/code&gt;  conform to equatable, so we can determine if two instances of &lt;code&gt;WeaponCache&lt;/code&gt; contain the same weapons.We will also create two concrete types that conform to the &lt;code&gt;Weapon&lt;/code&gt; protocol. We’ll also want our new concrete types, &lt;code&gt;Sword&lt;/code&gt; and &lt;code&gt;Hammer&lt;/code&gt; to conform to Equatable so we can compare the contents of the &lt;code&gt;WeaponCache&lt;/code&gt;&amp;rsquo;s inner storage, the &lt;code&gt;weapons&lt;/code&gt; array.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;protocol&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;Equatable&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;sharpness&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt;
+
+    &lt;span class="kd"&gt;static&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;lhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;rhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sharpness&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;sharpness&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;Hammer&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;Equatable&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;String&lt;/span&gt;
+    &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;weight&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Int&lt;/span&gt; 
+
+    &lt;span class="kd"&gt;static&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;lhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Hammer&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;rhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Hammer&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;name&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;weight&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;weight&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Equatable&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;weapons&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Weapon&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+    &lt;span class="kd"&gt;static&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;lhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;rhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt; &lt;span class="c1"&gt;// Missing implementation!&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;How will we go about conforming to  &lt;code&gt;Equatable&lt;/code&gt; in &lt;code&gt;WeaponCache&lt;/code&gt; ? We need to compare the collection of &lt;code&gt;Weapons&lt;/code&gt;  to each other. We can just conform &lt;code&gt;Weapon&lt;/code&gt; to &lt;code&gt;Equatable&lt;/code&gt; , right?&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;protocol&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Equatable&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="c1"&gt;// Error: protocol ‘Weapon’ can only be used as a generic constraint because it has Self or associated type requirements&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;No luck! But why is this happening?&lt;/p&gt;
+
+&lt;p&gt;If we look at the Swift implementation of &lt;code&gt;Equatable&lt;/code&gt; we see that the function &lt;code&gt;==&lt;/code&gt; has references to &lt;code&gt;Self&lt;/code&gt;:
+&lt;code&gt;swift
+public static func ==(lhs: Self, rhs: Self) -&amp;gt; Bool
+&lt;/code&gt;
+Due to this, we’d have to conform &lt;code&gt;Weapon&lt;/code&gt; to &lt;code&gt;Equatable&lt;/code&gt; heterogeneously, which we’re not able to do. But there &lt;strong&gt;is a way&lt;/strong&gt; &lt;strong&gt;to work around this limitation!&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;The solution: make your own equal function and provide an &lt;code&gt;Equatable&lt;/code&gt; type-constrained extension.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;protocol&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;isEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+
+&lt;span class="kd"&gt;extension&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt; &lt;span class="k"&gt;where&lt;/span&gt; &lt;span class="k"&gt;Self&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;&lt;span class="kt"&gt;Equatable&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="nf"&gt;isEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;to&lt;/span&gt; &lt;span class="nv"&gt;other&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Weapon&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="k"&gt;let&lt;/span&gt; &lt;span class="nv"&gt;other&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;other&lt;/span&gt; &lt;span class="k"&gt;as?&lt;/span&gt; &lt;span class="k"&gt;Self&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="k"&gt;self&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;other&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;In our &lt;strong&gt;protocol extension&lt;/strong&gt; of &lt;code&gt;Weapon&lt;/code&gt; we attempt to cast &lt;code&gt;other&lt;/code&gt; to the current type &lt;code&gt;Self&lt;/code&gt;, if it succeeds we then use that type’s implementation of &lt;code&gt;==&lt;/code&gt; from &lt;code&gt;Equatable&lt;/code&gt; to determine if they are equal. If the typecast fails, we return false.&lt;/p&gt;
+
+&lt;p&gt;Now our conformance to Equatable in &lt;code&gt;WeaponCache&lt;/code&gt; can be implemented! We’ll use the &lt;code&gt;zip&lt;/code&gt; method to compare the contents of the weapons arrays.&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="kd"&gt;struct&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;Equatable&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+    &lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;weapons&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Weapon&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+
+    &lt;span class="kd"&gt;static&lt;/span&gt; &lt;span class="kd"&gt;func&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;lhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;rhs&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&amp;gt;&lt;/span&gt; &lt;span class="kt"&gt;Bool&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+        &lt;span class="c1"&gt;// Check if the caches contain the same amount of weapons&lt;/span&gt;
+        &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;weapons&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;weapons&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;count&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+            &lt;span class="c1"&gt;// Compare the collections of weapons in the caches&lt;/span&gt;
+            &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="nf"&gt;zip&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;weapons&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rhs&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;weapons&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="n"&gt;contains&lt;/span&gt; &lt;span class="p"&gt;{&lt;/span&gt; &lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="nv"&gt;$0&lt;/span&gt;&lt;span class="o"&gt;.&lt;/span&gt;&lt;span class="nf"&gt;isEqual&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;to&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="nv"&gt;$1&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="p"&gt;}&lt;/span&gt;
+        &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="kc"&gt;false&lt;/span&gt;
+    &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;WeaponCache in action:&lt;/p&gt;
+&lt;pre class="highlight swift"&gt;&lt;code&gt;&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;cache1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;weapons&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Master Sword"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;sharpness&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;99&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+     &lt;span class="kt"&gt;Hammer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Bokoblin Club"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;weight&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt;&lt;span class="p"&gt;)])&lt;/span&gt;
+
+&lt;span class="k"&gt;var&lt;/span&gt; &lt;span class="nv"&gt;cache2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;WeaponCache&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;weapons&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt;
+    &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="kt"&gt;Sword&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Rusty Sword"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;sharpness&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;18&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt;
+     &lt;span class="kt"&gt;Hammer&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nv"&gt;name&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="s"&gt;"Bokoblin Club"&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nv"&gt;weight&lt;/span&gt;&lt;span class="p"&gt;:&lt;/span&gt; &lt;span class="mi"&gt;23&lt;/span&gt;&lt;span class="p"&gt;)])&lt;/span&gt;
+
+&lt;span class="n"&gt;cache1&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;cache1&lt;/span&gt; &lt;span class="c1"&gt;// true&lt;/span&gt;
+&lt;span class="n"&gt;cache1&lt;/span&gt; &lt;span class="o"&gt;==&lt;/span&gt; &lt;span class="n"&gt;cache2&lt;/span&gt; &lt;span class="c1"&gt;// false&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;By implementing our own &lt;code&gt;isEqual&lt;/code&gt; function for our &lt;code&gt;Weapon&lt;/code&gt; protocol we were able to conform &lt;code&gt;WeaponCache&lt;/code&gt; to &lt;code&gt;Equatable&lt;/code&gt; and compare instances as we intended.&lt;/p&gt;
+
+&lt;p&gt;Download the playground file here: &lt;a href="/files/WeaponCache.playground.zip"&gt;WeaponCache.playground&lt;/a&gt;&lt;/p&gt;
+</content>
+  </entry>
   <entry>
     <title>Swift Networking Operations</title>
     <link rel="alternate" href="http://blog.url.com/blog/2017/05/28/swift-networking-operations.html"/>
@@ -714,26 +869,6 @@ But hold off a minute, where’s all this network code supposed to go? Making th
 &lt;p&gt;While I welcome making Swift adhere to more typical access control implementations, there seems to be a stirring in the community about how useful this change really was. There has been talk on the Swift mailing list that this change may be rolled back if it’s not widely used. One of the proposals is to alias &lt;code&gt;fileprivate&lt;/code&gt; back to &lt;code&gt;private&lt;/code&gt; and make them synonymous, and deprecate the &lt;code&gt;fileprivate&lt;/code&gt; keyword.&lt;/p&gt;
 
 &lt;p&gt;I would prefer if Swift had a &lt;code&gt;typeprivate&lt;/code&gt; keyword, as this would be a more useful feature than private/fileprivate separation. This would help to separate code responsibility and help maintainability far more. The whole private/fileprivate argument may just be a way of dancing around better methods to organize API in the first place. It seemed like a great idea, but maybe it isn’t that great in practice. I’m glad Apple is considering the switch back.&lt;/p&gt;
-</content>
-  </entry>
-  <entry>
-    <title>Ruby Dojo</title>
-    <link rel="alternate" href="http://blog.url.com/blog/2016/07/19/ruby-dojo.html"/>
-    <id>http://blog.url.com/blog/2016/07/19/ruby-dojo.html</id>
-    <published>2016-07-19T14:05:00-04:00</published>
-    <updated>2016-07-19T14:12:52-04:00</updated>
-    <author>
-      <name>Article Author</name>
-    </author>
-    <content type="html">&lt;p&gt;I recently finished my app Ruby Dojo. It&amp;rsquo;s up on the App Store today! Please check it out if you&amp;rsquo;re at all interested in learning the Ruby programming language, or just coding in general.&lt;/p&gt;
-
-&lt;p&gt;I have released the application with the first 4 courses as free. As time goes on I will continually add more courses and lessons in different Ruby topics. All future courses and lessons will be only between $1.99 or $2.99 for a bundle.&lt;/p&gt;
-
-&lt;p&gt;Here&amp;rsquo;s the link on iTunes: &lt;a href="https://itunes.apple.com/app/ruby-dojo/id1135266277"&gt;Ruby Dojo&lt;/a&gt;&lt;/p&gt;
-
-&lt;p&gt;Thanks!&lt;/p&gt;
-
-&lt;p&gt;&lt;img title="Ruby Dojo Icon" alt="logo" src="http://a4.mzstatic.com/us/r30/Purple60/v4/48/79/77/487977f4-e31e-a13f-5f11-2bddfb49cda6/icon175x175.png" /&gt;&lt;/p&gt;
 </content>
   </entry>
 </feed>

@@ -3122,61 +3122,65 @@ a, a:hover {
   color: black; }
 
 /* line 35, site.css.scss */
+article p a {
+  color: #337ab7; }
+
+/* line 38, site.css.scss */
 .article-link:hover {
   border-bottom: 1px solid gray;
   color: gray; }
 
-/* line 39, site.css.scss */
+/* line 42, site.css.scss */
 .article-link {
   font-size: 0.8em;
   font-weight: bold;
   color: gray; }
 
-/* line 44, site.css.scss */
+/* line 47, site.css.scss */
 nav, .nav {
   font-size: 30px;
   background-color: none; }
-  /* line 47, site.css.scss */
+  /* line 50, site.css.scss */
   nav a, nav li > a, .nav a, .nav li > a {
     color: #ff3b30 !important; }
-    /* line 49, site.css.scss */
+    /* line 52, site.css.scss */
     nav a:focus, nav a:hover, nav li > a:focus, nav li > a:hover, .nav a:focus, .nav a:hover, .nav li > a:focus, .nav li > a:hover {
       background-color: none; }
 
-/* line 52, site.css.scss */
+/* line 55, site.css.scss */
 .no-hover:hover {
   background-color: none; }
 
-/* line 54, site.css.scss */
+/* line 57, site.css.scss */
 p {
   /*font-family: "freight-text-pro"; */
   font-size: 1.375em;
   margin: 22px 0 22px 0; }
 
-/* line 60, site.css.scss */
+/* line 63, site.css.scss */
 ul.nav a:hover, .navbar-header a:hover {
   color: gray !important;
   background-color: none !important; }
 
-/* line 65, site.css.scss */
+/* line 68, site.css.scss */
 .navbar-brand {
   font-size: 30px; }
 
-/* line 67, site.css.scss */
+/* line 70, site.css.scss */
 .navbar-toggle .icon-bar {
   background-color: #ff3b30; }
 
-/* line 71, site.css.scss */
+/* line 74, site.css.scss */
 .navbar-static-top {
   border: none;
   margin-bottom: 0px; }
 
-/* line 76, site.css.scss */
+/* line 79, site.css.scss */
 .main-pic {
   max-width: 400px;
   margin: 0 auto; }
 
-/* line 80, site.css.scss */
+/* line 83, site.css.scss */
 .page-title {
   font-size: 32pt;
   font-weight: 600;
@@ -3184,113 +3188,113 @@ ul.nav a:hover, .navbar-header a:hover {
   text-align: center;
   text-transform: uppercase; }
 
-/* line 87, site.css.scss */
+/* line 90, site.css.scss */
 .main {
   -webkit-animation: ease-up 0.8s 0.2s;
   animation: ease-up 0.8s;
   animation-delay: 0.0s; }
 
-/* line 92, site.css.scss */
+/* line 95, site.css.scss */
 .section-title {
   font-style: "futura-hv" -apple-system, Helvetica, Arial, sans-serif;
   font-weight: 600;
   font-size: 26pt;
   color: #000; }
 
-/* line 98, site.css.scss */
+/* line 101, site.css.scss */
 .desc {
   margin: 0 auto 30pt auto;
   text-align: left; }
 
-/* line 103, site.css.scss */
+/* line 106, site.css.scss */
 .sm {
   font-size: 22pt; }
 
-/* line 106, site.css.scss */
+/* line 109, site.css.scss */
 .links {
   text-align: center; }
 
-/* line 109, site.css.scss */
+/* line 112, site.css.scss */
 .links a {
   color: gray; }
-  /* line 111, site.css.scss */
+  /* line 114, site.css.scss */
   .links a:hover {
     color: #5BC0BE; }
 
-/* line 114, site.css.scss */
+/* line 117, site.css.scss */
 .read-more {
   font-size: 16px;
   color: #5BC0BE; }
 
-/* line 119, site.css.scss */
+/* line 122, site.css.scss */
 .article-title {
   font-size: 36pt;
   margin-bottom: 5pt; }
 
-/* line 123, site.css.scss */
+/* line 126, site.css.scss */
 .article-date {
   color: #888; }
 
-/* line 127, site.css.scss */
+/* line 130, site.css.scss */
 .logo .page-title {
   -webkit-animation: fade-in-down 0.6s;
   animation: fade-in-down 0.6s;
   -webkit-animation-delay: 0.0s;
   animation-delay: 0.0s; }
 
-/* line 133, site.css.scss */
+/* line 136, site.css.scss */
 #instafeed > a > img {
   margin: 0 15px 15px 0px; }
 
-/* line 136, site.css.scss */
+/* line 139, site.css.scss */
 .follow-me {
   font-size: 12pt; }
 
-/* line 140, site.css.scss */
+/* line 143, site.css.scss */
 .no-top-margin {
   margin-top: 0; }
 
-/* line 144, site.css.scss */
+/* line 147, site.css.scss */
 a.subdued {
   color: #888; }
-  /* line 146, site.css.scss */
+  /* line 149, site.css.scss */
   a.subdued:hover {
     border-bottom: 1px solid #888; }
 
-/* line 152, site.css.scss */
+/* line 155, site.css.scss */
 .pagination {
   display: block;
   margin: 50px 20%;
   font-size: 12pt;
   text-align: center; }
 
-/* line 162, site.css.scss */
+/* line 165, site.css.scss */
 .article-nav {
   display: block; }
 
-/* line 167, site.css.scss */
+/* line 170, site.css.scss */
 .active {
   color: #5BC0BE !important; }
 
-/* line 171, site.css.scss */
+/* line 174, site.css.scss */
 .page-indexing {
   margin: 0 10px 0 10px; }
 
-/* line 174, site.css.scss */
+/* line 177, site.css.scss */
 article {
   margin-bottom: 50px; }
 
-/* line 177, site.css.scss */
+/* line 180, site.css.scss */
 article p img {
   display: block;
   margin: auto; }
 
-/* line 181, site.css.scss */
+/* line 184, site.css.scss */
 footer {
   clear: right;
   margin-top: 50pt; }
 
-/* line 185, site.css.scss */
+/* line 188, site.css.scss */
 footer p, footer p > a {
   font-family: 'futura-pt' -apple-system, Helvetica, Arial, sans-serif;
   font-size: 10pt;

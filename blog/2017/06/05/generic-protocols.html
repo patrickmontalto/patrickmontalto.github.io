@@ -1,0 +1,208 @@
+<!doctype html>
+<html>
+  <head>
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <meta charset="utf-8">
+    <meta content="width=device-width,initial-scale=1.0,minimum-scale=1.0,maximum-scale=1.0,user-scalable=no" name="viewport">
+
+    <!-- Use title if it's in the page YAML frontmatter -->
+    <title>Generic Protocols</title>
+
+    
+    <script src="https://code.jquery.com/jquery-1.12.3.min.js" integrity="sha256-aaODHAgvwQW1bFOGXMeX+pC4PZIPsvn2h1sArYOhgXQ=" crossorigin="anonymous"></script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+    <link href='//fonts.googleapis.com/css?family=Lato:300,400' rel='stylesheet' type='text/css'>
+    <script src="/javascripts/all.js"></script>
+    <link href="/stylesheets/site.css" rel="stylesheet" />
+    <link href="/stylesheets/highlighting.css" rel="stylesheet" />
+  </head>
+  
+      <div class="container">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar-collapse-1" aria-expanded="false">
+            <span class="sr-only">Toggle navigation</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="/">patrickm.io</a>
+        </div>
+
+        <!-- Collect the nav links, forms, and other content for toggling -->
+        <div class="collapse navbar-collapse" id="navbar-collapse-1">
+          
+          <ul class="nav navbar-nav navbar-right">
+            <li class="no-hover">
+              <a href="/blog">blog</a>
+            </li>
+          </ul>
+        </div><!-- /.navbar-collapse -->
+      </div><!-- /.container-fluid -->
+    </nav>
+
+    <div class="container">
+
+<article>
+		<h1 class="article-title">Generic Protocols</h1>
+		<p>&ldquo;protocol ‘Xyz’ can only be used as a generic constraint because it has Self or associated type requirements”</p>
+
+<p>If you’ve seen that before and been frustrated, it’s OK. Today, we’re going to talk about what’s causing this and an example on how to get around it.</p>
+
+<p>There exist two protocol use cases. The first being <em>Heterogeneous (Existential Types)</em>, and the second being <em>Homogeneous (Generic Constraints)</em>. </p>
+
+<p>Let’s consider the first: Existential Type. 
+Say we have a <code>Weapon</code> protocol:</p>
+<pre class="highlight swift"><code><span class="kd">protocol</span> <span class="kt">Weapon</span> <span class="p">{</span>
+    <span class="kd">func</span> <span class="nf">reforged</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="k">Self</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Not a very exciting protocol, but let’s implement a generic function that is constrained to the <code>Weapon</code> protocol.</p>
+<pre class="highlight swift"><code><span class="kd">func</span> <span class="nf">enhance</span><span class="p">(</span><span class="n">_</span> <span class="nv">weapon</span><span class="p">:</span> <span class="kt">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">T</span> <span class="k">where</span> <span class="kt">T</span><span class="p">:</span> <span class="kt">Weapon</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">weapon</span><span class="o">.</span><span class="nf">reforged</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>We can create a <code>Sword</code> struct that adheres to this <code>Weapon</code> protocol:</p>
+<pre class="highlight swift"><code><span class="kd">struct</span> <span class="kt">Sword</span><span class="p">:</span> <span class="kt">Weapon</span> <span class="p">{</span>
+    <span class="kd">private(set)</span> <span class="k">var</span> <span class="nv">isReforged</span> <span class="o">=</span> <span class="kc">false</span>
+    <span class="kd">func</span> <span class="nf">reforged</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kt">Sword</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kt">Sword</span><span class="p">(</span><span class="nv">isReforged</span><span class="p">:</span> <span class="kc">true</span><span class="p">)</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Now we can call <code>enhance(_:)</code>on a <code>Sword</code> to get a reforged <code>Sword</code> instance.</p>
+<pre class="highlight swift"><code><span class="k">let</span> <span class="nv">enhancedSword</span> <span class="o">=</span> <span class="nf">enhance</span><span class="p">(</span><span class="kt">Sword</span><span class="p">())</span>
+</code></pre>
+
+<p>Rewritten as follows, we’ve made <code>enhance(_ :)</code>  a <em>Heterogeneous</em> function using <em>Existential Types</em>. When this occurs, we can pass <strong>any</strong> object that conforms to the <code>Weapon</code> protocol and return <strong>any</strong> other object that also conforms to the <code>Weapon</code> protocol. They may <strong>not</strong> necessarily be the same type!</p>
+<pre class="highlight swift"><code><span class="kd">func</span> <span class="nf">enhance</span><span class="p">(</span><span class="n">_</span> <span class="nv">weapon</span><span class="p">:</span> <span class="kt">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Weapon</span> <span class="p">{</span>
+    <span class="k">if</span> <span class="n">weapon</span> <span class="k">is</span> <span class="kt">Sword</span> <span class="p">{</span> 
+        <span class="k">return</span> <span class="kt">Hammer</span><span class="p">()</span> 
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="kt">Sword</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>Here, we’re able to return a <code>Hammer</code> type from the <code>enhance(_:)</code> function even when we provide it with a <code>Sword</code> instance.</p>
+
+<p>Now, if we were to rewrite <code>enhance(_:)</code> to the following, we’d be using <em>Generic Constraints (Homogeneous)</em>:</p>
+<pre class="highlight swift"><code><span class="kd">func</span> <span class="nf">enhance</span><span class="p">(</span><span class="n">_</span> <span class="nv">weapon</span><span class="p">:</span> <span class="kt">T</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">T</span> <span class="k">where</span> <span class="kt">T</span><span class="p">:</span> <span class="kt">Weapon</span> <span class="p">{</span>
+    <span class="k">return</span> <span class="n">weapon</span><span class="o">.</span><span class="nf">reforged</span><span class="p">()</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>In this case, the generic parameter is <strong>always</strong> the same type T, it just happens to be constrained to have to adhere to the <code>Weapon</code> protocol as well. Therefore, whatever type we provide to T is the same type we will get out.</p>
+
+<p>Let’s now create a collection of container for a collection of <code>Weapons</code>. We will call it <code>WeaponCache</code>. Our goal is to be able to make <code>WeaponCache</code>  conform to equatable, so we can determine if two instances of <code>WeaponCache</code> contain the same weapons.We will also create two concrete types that conform to the <code>Weapon</code> protocol. We’ll also want our new concrete types, <code>Sword</code> and <code>Hammer</code> to conform to Equatable so we can compare the contents of the <code>WeaponCache</code>&rsquo;s inner storage, the <code>weapons</code> array.</p>
+<pre class="highlight swift"><code><span class="kd">protocol</span> <span class="kt">Weapon</span> <span class="p">{</span>
+<span class="p">}</span>
+
+<span class="kd">struct</span> <span class="kt">Sword</span><span class="p">:</span> <span class="kt">Weapon</span><span class="p">,</span> <span class="kt">Equatable</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">name</span><span class="p">:</span> <span class="kt">String</span>
+    <span class="k">let</span> <span class="nv">sharpness</span><span class="p">:</span> <span class="kt">Int</span>
+
+    <span class="kd">static</span> <span class="kd">func</span> <span class="o">==</span><span class="p">(</span><span class="nv">lhs</span><span class="p">:</span> <span class="kt">Sword</span><span class="p">,</span> <span class="nv">rhs</span><span class="p">:</span> <span class="kt">Sword</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">lhs</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">rhs</span><span class="o">.</span><span class="n">name</span> <span class="o">&amp;&amp;</span> <span class="n">lhs</span><span class="o">.</span><span class="n">sharpness</span> <span class="o">==</span> <span class="n">rhs</span><span class="o">.</span><span class="n">sharpness</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">struct</span> <span class="kt">Hammer</span><span class="p">:</span> <span class="kt">Weapon</span><span class="p">,</span> <span class="kt">Equatable</span> <span class="p">{</span>
+    <span class="k">let</span> <span class="nv">name</span><span class="p">:</span> <span class="kt">String</span>
+    <span class="k">let</span> <span class="nv">weight</span><span class="p">:</span> <span class="kt">Int</span> 
+
+    <span class="kd">static</span> <span class="kd">func</span> <span class="o">==</span><span class="p">(</span><span class="nv">lhs</span><span class="p">:</span> <span class="kt">Hammer</span><span class="p">,</span> <span class="nv">rhs</span><span class="p">:</span> <span class="kt">Hammer</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="n">lhs</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">rhs</span><span class="o">.</span><span class="n">name</span> <span class="o">&amp;&amp;</span> <span class="n">lhs</span><span class="o">.</span><span class="n">weight</span> <span class="o">==</span> <span class="n">rhs</span><span class="o">.</span><span class="n">weight</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+
+<span class="kd">struct</span> <span class="kt">WeaponCache</span><span class="p">:</span> <span class="kt">Equatable</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">weapons</span><span class="p">:</span> <span class="p">[</span><span class="kt">Weapon</span><span class="p">]</span>
+
+    <span class="kd">static</span> <span class="kd">func</span> <span class="o">==</span><span class="p">(</span><span class="nv">lhs</span><span class="p">:</span> <span class="kt">WeaponCache</span><span class="p">,</span> <span class="nv">rhs</span><span class="p">:</span> <span class="kt">WeaponCache</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span> <span class="p">{</span>
+        <span class="k">return</span> <span class="kc">false</span> <span class="c1">// Missing implementation!</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>How will we go about conforming to  <code>Equatable</code> in <code>WeaponCache</code> ? We need to compare the collection of <code>Weapons</code>  to each other. We can just conform <code>Weapon</code> to <code>Equatable</code> , right?</p>
+<pre class="highlight swift"><code><span class="kd">protocol</span> <span class="kt">Weapon</span><span class="p">:</span> <span class="kt">Equatable</span> <span class="p">{</span>
+    <span class="c1">// Error: protocol ‘Weapon’ can only be used as a generic constraint because it has Self or associated type requirements</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>No luck! But why is this happening?</p>
+
+<p>If we look at the Swift implementation of <code>Equatable</code> we see that the function <code>==</code> has references to <code>Self</code>:
+<code>swift
+public static func ==(lhs: Self, rhs: Self) -&gt; Bool
+</code>
+Due to this, we’d have to conform <code>Weapon</code> to <code>Equatable</code> heterogeneously, which we’re not able to do. But there <strong>is a way</strong> <strong>to work around this limitation!</strong></p>
+
+<p>The solution: make your own equal function and provide an <code>Equatable</code> type-constrained extension.</p>
+<pre class="highlight swift"><code><span class="kd">protocol</span> <span class="kt">Weapon</span> <span class="p">{</span>
+    <span class="kd">func</span> <span class="nf">isEqual</span><span class="p">(</span><span class="n">to</span> <span class="nv">other</span><span class="p">:</span> <span class="kt">Weapon</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span>
+<span class="p">}</span>
+
+<span class="kd">extension</span> <span class="kt">Weapon</span> <span class="k">where</span> <span class="k">Self</span><span class="p">:</span><span class="kt">Equatable</span> <span class="p">{</span>
+    <span class="kd">func</span> <span class="nf">isEqual</span><span class="p">(</span><span class="n">to</span> <span class="nv">other</span><span class="p">:</span> <span class="kt">Weapon</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span> <span class="p">{</span>
+        <span class="k">if</span> <span class="k">let</span> <span class="nv">other</span> <span class="o">=</span> <span class="n">other</span> <span class="k">as?</span> <span class="k">Self</span> <span class="p">{</span>
+            <span class="k">return</span> <span class="k">self</span> <span class="o">==</span> <span class="n">other</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="kc">false</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>In our <strong>protocol extension</strong> of <code>Weapon</code> we attempt to cast <code>other</code> to the current type <code>Self</code>, if it succeeds we then use that type’s implementation of <code>==</code> from <code>Equatable</code> to determine if they are equal. If the typecast fails, we return false.</p>
+
+<p>Now our conformance to Equatable in <code>WeaponCache</code> can be implemented! We’ll use the <code>zip</code> method to compare the contents of the weapons arrays.</p>
+<pre class="highlight swift"><code><span class="kd">struct</span> <span class="kt">WeaponCache</span><span class="p">:</span> <span class="kt">Equatable</span> <span class="p">{</span>
+    <span class="k">var</span> <span class="nv">weapons</span><span class="p">:</span> <span class="p">[</span><span class="kt">Weapon</span><span class="p">]</span>
+
+    <span class="kd">static</span> <span class="kd">func</span> <span class="o">==</span><span class="p">(</span><span class="nv">lhs</span><span class="p">:</span> <span class="kt">WeaponCache</span><span class="p">,</span> <span class="nv">rhs</span><span class="p">:</span> <span class="kt">WeaponCache</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kt">Bool</span> <span class="p">{</span>
+        <span class="c1">// Check if the caches contain the same amount of weapons</span>
+        <span class="k">if</span> <span class="n">lhs</span><span class="o">.</span><span class="n">weapons</span><span class="o">.</span><span class="n">count</span> <span class="o">==</span> <span class="n">rhs</span><span class="o">.</span><span class="n">weapons</span><span class="o">.</span><span class="n">count</span> <span class="p">{</span>
+            <span class="c1">// Compare the collections of weapons in the caches</span>
+            <span class="k">return</span> <span class="o">!</span><span class="nf">zip</span><span class="p">(</span><span class="n">lhs</span><span class="o">.</span><span class="n">weapons</span><span class="p">,</span> <span class="n">rhs</span><span class="o">.</span><span class="n">weapons</span><span class="p">)</span><span class="o">.</span><span class="n">contains</span> <span class="p">{</span> <span class="o">!</span><span class="nv">$0</span><span class="o">.</span><span class="nf">isEqual</span><span class="p">(</span><span class="nv">to</span><span class="p">:</span> <span class="nv">$1</span><span class="p">)</span> <span class="p">}</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="kc">false</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</code></pre>
+
+<p>WeaponCache in action:</p>
+<pre class="highlight swift"><code><span class="k">var</span> <span class="nv">cache1</span> <span class="o">=</span> <span class="kt">WeaponCache</span><span class="p">(</span><span class="nv">weapons</span><span class="p">:</span>
+    <span class="p">[</span><span class="kt">Sword</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"Master Sword"</span><span class="p">,</span> <span class="nv">sharpness</span><span class="p">:</span> <span class="mi">99</span><span class="p">),</span>
+     <span class="kt">Hammer</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"Bokoblin Club"</span><span class="p">,</span> <span class="nv">weight</span><span class="p">:</span> <span class="mi">23</span><span class="p">)])</span>
+
+<span class="k">var</span> <span class="nv">cache2</span> <span class="o">=</span> <span class="kt">WeaponCache</span><span class="p">(</span><span class="nv">weapons</span><span class="p">:</span>
+    <span class="p">[</span><span class="kt">Sword</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"Rusty Sword"</span><span class="p">,</span> <span class="nv">sharpness</span><span class="p">:</span> <span class="mi">18</span><span class="p">),</span>
+     <span class="kt">Hammer</span><span class="p">(</span><span class="nv">name</span><span class="p">:</span> <span class="s">"Bokoblin Club"</span><span class="p">,</span> <span class="nv">weight</span><span class="p">:</span> <span class="mi">23</span><span class="p">)])</span>
+
+<span class="n">cache1</span> <span class="o">==</span> <span class="n">cache1</span> <span class="c1">// true</span>
+<span class="n">cache1</span> <span class="o">==</span> <span class="n">cache2</span> <span class="c1">// false</span>
+</code></pre>
+
+<p>By implementing our own <code>isEqual</code> function for our <code>Weapon</code> protocol we were able to conform <code>WeaponCache</code> to <code>Equatable</code> and compare instances as we intended.</p>
+
+<p>Download the playground file here: <a href="/files/WeaponCache.playground.zip">WeaponCache.playground</a></p>
+
+	</article>
+
+	<div class='article-nav'>
+      <div class="pull-right"><a class="active" href="/blog/2017/05/28/swift-networking-operations.html">Next →</a></div>
+
+	</div>
+
+
+
+		<footer>
+			<p>© 2017 <a href="/" rel="home">Patrick Montalto</a></p>
+		</footer>
+		</div>
+  
+</html>
